@@ -1,0 +1,11 @@
+{
+  "name": "whatsapp-ws",
+  "version": "0.0.1",
+  "description": "WhatsApp Web WS",
+  "main": "dist/index.js",
+  "author": "Mochamad Arifin",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^3.8.3"
+  }
+}
