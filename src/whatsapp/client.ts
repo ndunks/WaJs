@@ -8,7 +8,7 @@ const Curve = require("curve25519-n")
 
 export default class WhatsAppClient {
     /** This app name */
-    clientName = 'WaJs'
+    clientName = platform()
 
     /** Compactible Web WhatsApp Version */
     version = '2.2019.6'
@@ -53,6 +53,7 @@ export default class WhatsAppClient {
 
     private isQrCodeScanned = false
     private messageConter: number = 0
+    private binConter: number = 0
     private startTime: number;
     private cmdStack = new Map<String, { message: String, resolve: Function, reject: Function }>()
     private onReady: (info: WhatsAppServerMsgConn, err?: string) => void
@@ -71,6 +72,9 @@ export default class WhatsAppClient {
             this.clientSecretKey = randomBytes(32);
             this.clientPrivateKey = Curve.makeSecretKey(Buffer.from(this.clientSecretKey))
             this.clientPublicKey = Curve.derivePublicKey(Buffer.from(this.clientPrivateKey))
+        }
+        if (!fs.existsSync('log')) {
+            fs.mkdirSync('log')
         }
     }
 
@@ -98,7 +102,7 @@ export default class WhatsAppClient {
     private init() {
         return this.sendCmd<CmdInitResponse>('admin', 'init',
             this.version.split('.').map(v => parseInt(v)),
-            [this.clientName, platform(), arch()],
+            [this.clientName, 'Chrome', arch()],
             this.clientId,
             true).then(
                 response => {
@@ -207,7 +211,10 @@ export default class WhatsAppClient {
         console.log(info);
         // On restored session is not contain secret
         if (info.secret) {
-            this.decryptEncryptionKeys(info.secret)
+            let error;
+            if ((error = this.decryptEncryptionKeys(info.secret))) {
+                return this.onReady(null, error)
+            }
         }
         // Save creds
         this.tokens = {
@@ -222,58 +229,46 @@ export default class WhatsAppClient {
     }
 
     private decryptEncryptionKeys(secretStr: string) {
-        /**
-                 * 0-32   PublicKey
-                 * 32-64  Hmac
-                 * 64-*   keys
-                 */
+        /*
+        * 0-32   PublicKey
+        * 32-64  Hmac
+        * 64-*   keys
+        */
         const secret = Buffer.from(secretStr, 'base64');
+
         if (secret.length != 144) {
             console.log('Invalid server secret length', secret.length);
         }
         const publicKey = Buffer.from(secret.slice(0, 32))
-        const sharedSecret = Curve.deriveSharedSecret(this.clientSecretKey, publicKey);
-
+        const sharedSecret = Curve.deriveSharedSecret(this.clientPrivateKey, publicKey);
         // HKDF implements RFC 5869
         const key = createHmac('sha256', Buffer.alloc(32)).update(sharedSecret).digest()
-        console.log('key', key);
         let keyStream: Buffer[] = []
         let blockIndex = 1
         let streamLength = 0
         let tmp: Buffer
         let keyBlock: Buffer
         let keyBlockLen = 0
-        console.log('HKDF');
         while (streamLength < 80) {
             tmp = Buffer.alloc(keyBlockLen + 1, keyBlock, 'binary')
-            // if (keyBlockLen) {
-            //     tmp.fill(keyBlock)
-            // }
             tmp[tmp.byteLength - 1] = blockIndex++
-            //tmp.write(String.fromCharCode(blockIndex++), keyBlockLen)
-            console.log('tmp', tmp.length, tmp);
             keyBlock = createHmac('sha256', key).update(tmp).digest()
-            console.log('keyBlock', keyBlock.length, keyBlock);
             keyBlockLen = keyBlock.length
             keyStream.push(keyBlock);
             streamLength += keyBlockLen
         }
         const sharedSecretExpanded = Buffer.concat(keyStream).slice(0, 80)
-        console.log('SSE', sharedSecretExpanded.length, sharedSecretExpanded);
 
         // Validate secret
         tmp = Buffer.alloc(secret.byteLength - 32)
         tmp.fill(secret.slice(0, 32))
         tmp.fill(secret.slice(64), 32)
-        const hmacValidation = createHmac('sha256', sharedSecretExpanded.slice(32, 64)).update(tmp).digest()
-        console.log('MATCH', hmacValidation);
-        console.log('WITHS', secret.slice(32, 64));
-        console.log('IS', hmacValidation.compare(secret.slice(32, 64)))
+        const hmacValidation = createHmac('sha256', sharedSecretExpanded.slice(32, 64)
+        ).update(tmp).digest()
 
         if (hmacValidation.compare(secret.slice(32, 64)) !== 0) {
-            console.warn('initial HMAC MISS MATCH')
-            // this.close()
-            // return this.onReady(null, 'initial HMAC MISS MATCH');
+            this.close()
+            return 'initial HMAC MISS MATCH';
         }
         //sharedSecretExpanded.length - 64  + serverSecret.length - 64
         const keysEncrypted = Buffer.concat([
@@ -299,12 +294,12 @@ export default class WhatsAppClient {
         this.macKey = keysDecrypted.slice(32, 64)
     }
 
-    private onMessage = (data: WebSocket.Data) => {
-        if (typeof data == 'string') {
+    private onMessage = (data: string | Buffer) => {
+        const firstCommaPos = data.indexOf(',');
+        const tag = data.slice(0, firstCommaPos).toString('ascii')
+        const message: string | Buffer = data.slice(firstCommaPos + 1)
+        if (typeof message == 'string') {
             //console.log('GotString', data);
-            const firstCommaPos = data.indexOf(',');
-            const tag = data.slice(0, firstCommaPos)
-            const message = data.slice(firstCommaPos + 1)
             if (tag[0] == 's') {
                 //server message
                 const params: any[] = JSON.parse(message);
@@ -318,7 +313,10 @@ export default class WhatsAppClient {
             }
         } else {
             if (this.encKey) {
-                this.decrypt(data as Buffer)
+                let logName = `log/${this.binConter++}-${tag}`;
+                fs.writeFileSync(`${logName}.enc`, message)
+                const decrypted = this.decrypt(message)
+                fs.writeFileSync(`${logName}.dec`, decrypted)
             }
             else console.log("GotBuffer", data);
         }
@@ -333,13 +331,11 @@ export default class WhatsAppClient {
         if (hmac.compare(hmacServer) !== 0) {
             console.log('Hmac Miss Match');
         }
-        const cipher = createCipheriv('aes-256-cbc', this.encKey, data.slice(32,32+ 16))
-        let keysDecryptedB64 = cipher.update(data.slice(32 + 16), undefined, 'base64')
-        console.log('B64', keysDecryptedB64);
-        keysDecryptedB64 += cipher.final('base64');
-        const keysDecrypted = Buffer.from(keysDecryptedB64, 'base64')
-        console.log('B64', keysDecryptedB64);
-        console.log('decypted', keysDecrypted);
+        const cipher = createCipheriv('aes-256-cbc', this.encKey, data.slice(32, 32 + 16))
+        let decs = [cipher.update(data.slice(32 + 16))]
+        decs.push(cipher.final())
+        cipher.destroy()
+        return Buffer.concat(decs)
     }
     private onClose = (code: Number, message: String) => {
         console.log("CLOSED!", code, message);
