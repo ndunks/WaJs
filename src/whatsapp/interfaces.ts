@@ -1,10 +1,20 @@
 
 export type WhatsAppCmdType = 'admin' | ''
 export type WhatsAppCmdAction = 'init' | 'Conn' | 'login' | 'challenge' | ''
-export type WhatsAppServerMsg = 'Conn' | 'Blocklist' | 'Stream' | 'Props' | 'Cmd'
+export type WhatsAppServerMsg = 'Conn' | 'Blocklist' | 'Stream' | 'Props' | 'Cmd' | 'Msg'
 
 export interface WhatsAppServerMsgCmd {
-    type: 'disconnect' | 'challenge'
+    type: 'disconnect' | 'challenge' | string
+}
+
+export interface WhatsAppServerMsgMsg {
+    cmd: 'ack' | string
+    id: string          // 3AA55DBD30C9CD2FD815
+    ack: number         // 3
+    from: string        // 6285726501017@c.us
+    to: string          // 628561840781@c.us
+    t: number           // 1589358323
+    broadcast: string   // status@broadcast
 }
 
 export interface WhatsAppServerMsgCmdDisconnect extends WhatsAppServerMsgCmd {

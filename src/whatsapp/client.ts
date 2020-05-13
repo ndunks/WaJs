@@ -61,20 +61,6 @@ export default class WhatsAppClient {
         if (fs.existsSync(authFile)) {
             this.restore()
         }
-
-        if ('undefined' == typeof this.clientId) {
-            // Generate 16 byte client ID
-            console.log('Generating new client id');
-            this.clientId = randomBytes(16).toString('base64');
-        }
-        if ('undefined' == typeof this.clientSecretKey) {
-            this.clientSecretKey = randomBytes(32);
-            this.clientPrivateKey = Curve.makeSecretKey(Buffer.from(this.clientSecretKey))
-            this.clientPublicKey = Curve.derivePublicKey(Buffer.from(this.clientPrivateKey))
-        }
-        if (!fs.existsSync('log')) {
-            fs.mkdirSync('log')
-        }
     }
 
     connect() {
@@ -99,6 +85,11 @@ export default class WhatsAppClient {
     }
 
     private init() {
+        if ('undefined' == typeof this.clientId) {
+            // Generate 16 byte client ID
+            console.log('Generating new client id');
+            this.clientId = randomBytes(16).toString('base64');
+        }
         return this.sendCmd<CmdInitResponse>('admin', 'init',
             this.version.split('.').map(v => parseInt(v)),
             [this.clientName, 'Chrome', arch()],
@@ -218,11 +209,16 @@ export default class WhatsAppClient {
             macKey: this.macKey.toString('base64')
         }))
     }
-    private clear(){
-        
+    private clear() {
+
     }
-    private onQRCodeScanned(info: WhatsAppServerMsgConn) {
+    private handleWhatsAppConn(info: WhatsAppServerMsgConn) {
         this.isQrCodeScanned = true
+        if ('undefined' == typeof this.clientSecretKey) {
+            this.clientSecretKey = randomBytes(32);
+            this.clientPrivateKey = Curve.makeSecretKey(Buffer.from(this.clientSecretKey))
+            this.clientPublicKey = Curve.derivePublicKey(Buffer.from(this.clientPrivateKey))
+        }
         // On restored session is not contain secret
         if (info.secret) {
             this.decryptEncryptionKeys(info.secret, this.clientPrivateKey)
@@ -292,13 +288,10 @@ export default class WhatsAppClient {
         ])
         const aesKey = sharedSecretExpanded.slice(0, 32)
         const iv = keysEncrypted.slice(0, 16)
-        console.log('aesKey', aesKey.length, aesKey)
-        console.log('iv', iv.length, iv)
         const cipher = createDecipheriv('aes-256-cbc', aesKey, iv)
         let bufs = [cipher.update(keysEncrypted.slice(16))]
         bufs.push(cipher.final())
         let keysDecrypted = Buffer.concat(bufs)
-        console.log('Key', keysDecrypted.length, keysDecrypted);
         this.encKey = keysDecrypted.slice(0, 32)
         this.macKey = keysDecrypted.slice(32, 64)
     }
@@ -322,24 +315,17 @@ export default class WhatsAppClient {
             }
         } else {
             if (this.encKey) {
-                let logName = `log/${this.startTime}-${this.binConter++}-${tag}`;
-                fs.writeFileSync(`${logName}.enc`, message)
-                const decrypted = this.decrypt(message)
-                fs.writeFileSync(logName, decrypted)
+                // const decrypted = this.decrypt(message)
             }
             else console.log("GotBuffer", data);
         }
     }
 
     private decrypt(data: Buffer) {
-        console.log('Decrypt', data);
         const hmac = createHmac('sha256', this.macKey).update(data.slice(32)).digest()
         const hmacServer = data.slice(0, 32)
-        console.log('hmacClient', hmac);
-        console.log('hmacServer', hmacServer);
-        console.log('is', hmac.compare(hmacServer));
         if (hmac.compare(hmacServer) !== 0) {
-            console.log('Hmac Miss Match');
+            throw new Error('Hmac Miss Match');
         }
         const cipher = createDecipheriv('aes-256-cbc', this.encKey, data.slice(32, 32 + 16))
         let decs = [cipher.update(data.slice(32 + 16))]
@@ -347,6 +333,7 @@ export default class WhatsAppClient {
         cipher.destroy()
         return Buffer.concat(decs)
     }
+
     private onClose = (code: Number, message: String) => {
         console.log("CLOSED!", code, message);
     }
@@ -383,11 +370,11 @@ export default class WhatsAppClient {
                 break;
             case 'Conn':
                 this.serverData[cmd] = params[0]
-                this.onQRCodeScanned(params[0])
+                this.handleWhatsAppConn(params[0])
                 break;
             default:
                 this.serverData[cmd] = params[0]
-                console.log('UnhandledServerMsg', cmd, args)
+                console.log('UnhandledServerMsg', cmd, params)
                 break;
         }
     }
