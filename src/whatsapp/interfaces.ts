@@ -1,8 +1,31 @@
 
+export interface WhatsAppClientConfig {
+    /** 16 Byte ID Auto Generated */
+    clientId: Buffer
+    /** base64 secret from server contains encrypted aesKey and macKey */
+    serverSecret?: Buffer
+    /** Encrypt decrypt AES */
+    aesKey?: Buffer
+    /** HMAC based key to sign/verify */
+    macKey?: Buffer
+    /** Our key, auto generated */
+    keys: {
+        /** 32 byte */
+        secretKey: Buffer
+        privateKey: Buffer
+        publicKey: Buffer
+    }
+    /** Tokens from server, to relogin session */
+    tokens?: {
+        client: Buffer
+        server: Buffer
+        browser: Buffer
+    }
+}
+
 export type WhatsAppCmdType = 'admin' | ''
 export type WhatsAppCmdAction = 'init' | 'Conn' | 'login' | 'challenge' | ''
 export type WhatsAppServerMsg = 'Conn' | 'Blocklist' | 'Stream' | 'Props' | 'Cmd' | 'Msg'
-
 export interface WhatsAppServerMsgCmd {
     type: 'disconnect' | 'challenge' | string
 }
