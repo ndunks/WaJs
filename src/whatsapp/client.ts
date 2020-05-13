@@ -1,7 +1,7 @@
 import WebSocket from "ws";
 import { randomBytes, createHmac, createCipheriv, createCipher, createDecipheriv } from "crypto";
 import { arch, platform } from "os";
-import { CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg, WhatsAppServerMsgConn, WhatsAppServerMsgCmd } from "./interfaces";
+import { CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg, WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge } from "./interfaces";
 import * as fs from 'fs'
 
 const Curve = require("curve25519-n")
@@ -121,8 +121,11 @@ export default class WhatsAppClient {
             this.onReady = (info, err) => err ? reject(err) : resolve(info)
             this.sendCmd('admin', 'login', this.tokens.client, this.tokens.server, this.clientId, 'takeover')
                 .then(response => {
-                    console.log(response);
-
+                    console.log('restoreSession', response);
+                    if (response.status != 200 && fs.existsSync(this.authFile)) {
+                        console.log('Deleting expired config');
+                        fs.unlinkSync(this.authFile)
+                    }
                     switch (response.status) {
                         case 200:
                             return //must received Conn, nothing todo here
@@ -190,12 +193,18 @@ export default class WhatsAppClient {
     private restore() {
         const saved = JSON.parse(fs.readFileSync(this.authFile, "ascii"))
         //console.log(this.authFile, options);
-        this.clientSecretKey = Buffer.from(saved.clientSecretKey.toString('base64'))
-        this.clientPrivateKey = Buffer.from(saved.clientPrivateKey.toString('base64'))
-        this.clientPublicKey = Buffer.from(saved.clientPublicKey.toString('base64'))
+        saved.clientSecretKey = Buffer.from(saved.clientSecretKey, 'base64')
+        saved.clientPrivateKey = Buffer.from(saved.clientPrivateKey, 'base64')
+        saved.clientPublicKey = Buffer.from(saved.clientPublicKey, 'base64')
         Object.keys(saved).forEach(
             k => this[k] = saved[k]
         )
+        if (!saved.encKey) {
+            this.decryptEncryptionKeys(this.serverSecret, this.clientPrivateKey)
+        } else {
+            this.encKey = Buffer.from(saved.encKey, 'base64')
+            this.macKey = Buffer.from(saved.macKey, 'base64')
+        }
     }
     private save() {
         fs.writeFileSync(this.authFile, JSON.stringify({
@@ -205,17 +214,22 @@ export default class WhatsAppClient {
             clientSecretKey: this.clientSecretKey.toString('base64'),
             clientPrivateKey: this.clientPrivateKey.toString('base64'),
             clientPublicKey: this.clientPublicKey.toString('base64'),
+            encKey: this.encKey.toString('base64'),
+            macKey: this.macKey.toString('base64')
         }))
+    }
+    private clear(){
+        
     }
     private onQRCodeScanned(info: WhatsAppServerMsgConn) {
         this.isQrCodeScanned = true
         // On restored session is not contain secret
         if (info.secret) {
+            this.decryptEncryptionKeys(info.secret, this.clientPrivateKey)
             this.serverSecret = info.secret
         }
-        let error;
-        if ((error = this.decryptEncryptionKeys(this.serverSecret))) {
-            return this.onReady(null, error)
+        if (!this.encKey) {
+            return this.onReady(null, 'No Encryptions Keys!')
         }
         // Save creds
         this.tokens = {
@@ -229,7 +243,7 @@ export default class WhatsAppClient {
         this.onReady(info);
     }
 
-    private decryptEncryptionKeys(secretStr: string) {
+    private decryptEncryptionKeys(secretStr: string, privateKey: Buffer) {
         /*
         * 0-32   PublicKey
         * 32-64  Hmac
@@ -241,7 +255,7 @@ export default class WhatsAppClient {
             console.log('Invalid server secret length', secret.length);
         }
         const publicKey = Buffer.from(secret.slice(0, 32))
-        const sharedSecret = Curve.deriveSharedSecret(this.clientPrivateKey, publicKey);
+        const sharedSecret = Curve.deriveSharedSecret(privateKey, publicKey);
         // HKDF implements RFC 5869
         const key = createHmac('sha256', Buffer.alloc(32)).update(sharedSecret).digest()
         let keyStream: Buffer[] = []
@@ -269,7 +283,7 @@ export default class WhatsAppClient {
 
         if (hmacValidation.compare(secret.slice(32, 64)) !== 0) {
             this.close()
-            return 'initial HMAC MISS MATCH';
+            throw new Error('Encryption keys invalid');
         }
         //sharedSecretExpanded.length - 64  + serverSecret.length - 64
         const keysEncrypted = Buffer.concat([
@@ -361,7 +375,11 @@ export default class WhatsAppClient {
                 return;
             case 'Cmd':
                 const args = params[0] as WhatsAppServerMsgCmd
-                console.log('WhatsAppServerCommand', cmd, args)
+                if (this.serverCmdHandlers[args.type]) {
+                    this.serverCmdHandlers[args.type](args)
+                } else {
+                    console.log('WhatsAppServerCommand', cmd, args)
+                }
                 break;
             case 'Conn':
                 this.serverData[cmd] = params[0]
@@ -372,6 +390,21 @@ export default class WhatsAppClient {
                 console.log('UnhandledServerMsg', cmd, args)
                 break;
         }
+    }
+    private serverCmdHandlers = {
+        challenge: (args: WhatsAppServerMsgCmdChallenge) => {
+            console.log('Handling challenge');
+            const challenge = Buffer.from(args.challenge, 'base64')
+            const signed = this.sign(challenge)
+            return this.sendCmd('admin', 'challenge', signed.toString('base64'), this.tokens.server, this.clientId)
+                .then(
+                    res => console.log('Chalenge response', res)
+                )
+        }
+    }
+    sign(data: Buffer) {
+        const sign = createHmac('sha256', this.macKey).update(data).digest()
+        return Buffer.concat([sign, data])
     }
 
     state() {

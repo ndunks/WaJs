@@ -1,11 +1,21 @@
 
 export type WhatsAppCmdType = 'admin' | ''
-export type WhatsAppCmdAction = 'init' | 'Conn' | 'login' | ''
+export type WhatsAppCmdAction = 'init' | 'Conn' | 'login' | 'challenge' | ''
 export type WhatsAppServerMsg = 'Conn' | 'Blocklist' | 'Stream' | 'Props' | 'Cmd'
 
 export interface WhatsAppServerMsgCmd {
+    type: 'disconnect' | 'challenge'
+}
+
+export interface WhatsAppServerMsgCmdDisconnect extends WhatsAppServerMsgCmd {
     type: 'disconnect'
     kind: 'replaced'
+}
+
+export interface WhatsAppServerMsgCmdChallenge extends WhatsAppServerMsgCmd {
+    type: 'challenge'
+    /** Base64 challenge */
+    challenge: string
 }
 
 export interface WhatsAppServerMsgConn {
@@ -17,7 +27,7 @@ export interface WhatsAppServerMsgConn {
     /** used to resuming closed sessions aka "Remember me" */
     clientToken: string
     connected: boolean
-    features: {KEY_PARTICIPANT: boolean, FLAGS: string}
+    features: { KEY_PARTICIPANT: boolean, FLAGS: string }
     is24h: boolean
     isResponse: string
     lc: string
@@ -44,7 +54,7 @@ export interface WhatsAppServerMsgConn {
     /** Charging state */
     plugged: boolean
     /** Protobuf version? */
-    protoVersion: [number,number]
+    protoVersion: [number, number]
     /** Account name */
     pushname: string
     /** ServerID ? */
