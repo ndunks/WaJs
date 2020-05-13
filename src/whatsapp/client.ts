@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { randomBytes, createHmac, createCipheriv, createCipher } from "crypto";
+import { randomBytes, createHmac, createCipheriv, createCipher, createDecipheriv } from "crypto";
 import { arch, platform } from "os";
 import { CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg, WhatsAppServerMsgConn, WhatsAppServerMsgCmd } from "./interfaces";
 import * as fs from 'fs'
@@ -8,13 +8,15 @@ const Curve = require("curve25519-n")
 
 export default class WhatsAppClient {
     /** This app name */
-    clientName = platform()
+    clientName = 'WaJs'
 
     /** Compactible Web WhatsApp Version */
     version = '2.2019.6'
 
     /** 16 Byte ID Auto Generated */
     clientId: String
+
+    /** Required to relogin session */
     tokens: {
         client: string
         server: string
@@ -33,11 +35,8 @@ export default class WhatsAppClient {
     /** ServerID Obtained from init */
     serverId: string
 
-    /** Our Secret + Server Public Key (secret[0 - 32]) */
-    //sharedSecret: Buffer
-
-    /** Extended sharedSecret to 80 bytes using HKDF */
-    //sharedSecretExpanded: Buffer
+    /** base64 secret from server */
+    serverSecret: string
 
     /** Used for decrypt/encrypt binary messages from server */
     encKey: Buffer
@@ -54,7 +53,7 @@ export default class WhatsAppClient {
     private isQrCodeScanned = false
     private messageConter: number = 0
     private binConter: number = 0
-    private startTime: number;
+    private startTime: string;
     private cmdStack = new Map<String, { message: String, resolve: Function, reject: Function }>()
     private onReady: (info: WhatsAppServerMsgConn, err?: string) => void
 
@@ -81,7 +80,7 @@ export default class WhatsAppClient {
     connect() {
         return new Promise(
             (resolve, reject) => {
-                this.startTime = new Date().getTime()
+                this.startTime = new Date().getTime().toString(36)
                 // Connecting to Whatsapp WS server
                 this.ws = new WebSocket("wss://web.whatsapp.com/ws", {
                     origin: "https://web.whatsapp.com",
@@ -189,32 +188,34 @@ export default class WhatsAppClient {
         require('qrcode-terminal').generate(qrContent, { small: true })
     }
     private restore() {
-        const options = JSON.parse(fs.readFileSync(this.authFile, "ascii"))
-        options.macKey = Buffer.from(options.macKey as any, 'base64')
-        options.encKey = Buffer.from(options.encKey as any, 'base64')
-        console.log(this.authFile, options);
-        Object.keys(options).forEach(
-            k => this[k] = options[k]
+        const saved = JSON.parse(fs.readFileSync(this.authFile, "ascii"))
+        //console.log(this.authFile, options);
+        this.clientSecretKey = Buffer.from(saved.clientSecretKey.toString('base64'))
+        this.clientPrivateKey = Buffer.from(saved.clientPrivateKey.toString('base64'))
+        this.clientPublicKey = Buffer.from(saved.clientPublicKey.toString('base64'))
+        Object.keys(saved).forEach(
+            k => this[k] = saved[k]
         )
-
     }
     private save() {
         fs.writeFileSync(this.authFile, JSON.stringify({
             clientId: this.clientId,
             tokens: this.tokens,
-            encKey: this.encKey.toString('base64'),
-            macKey: this.macKey.toString('base64')
+            serverSecret: this.serverSecret,
+            clientSecretKey: this.clientSecretKey.toString('base64'),
+            clientPrivateKey: this.clientPrivateKey.toString('base64'),
+            clientPublicKey: this.clientPublicKey.toString('base64'),
         }))
     }
     private onQRCodeScanned(info: WhatsAppServerMsgConn) {
         this.isQrCodeScanned = true
-        console.log(info);
         // On restored session is not contain secret
         if (info.secret) {
-            let error;
-            if ((error = this.decryptEncryptionKeys(info.secret))) {
-                return this.onReady(null, error)
-            }
+            this.serverSecret = info.secret
+        }
+        let error;
+        if ((error = this.decryptEncryptionKeys(this.serverSecret))) {
+            return this.onReady(null, error)
         }
         // Save creds
         this.tokens = {
@@ -279,17 +280,11 @@ export default class WhatsAppClient {
         const iv = keysEncrypted.slice(0, 16)
         console.log('aesKey', aesKey.length, aesKey)
         console.log('iv', iv.length, iv)
-        const cipher = createCipheriv('aes-256-cbc', aesKey, iv)
+        const cipher = createDecipheriv('aes-256-cbc', aesKey, iv)
         let bufs = [cipher.update(keysEncrypted.slice(16))]
         bufs.push(cipher.final())
         let keysDecrypted = Buffer.concat(bufs)
         console.log('Key', keysDecrypted.length, keysDecrypted);
-        if (keysDecrypted.length != 64) {
-            console.warn(`Invalid decrypted key length: ${keysDecrypted.length}. or app need to recode.`)
-            keysDecrypted = keysDecrypted.slice(0, 64)
-            // this.close()
-            // return this.onReady(null, `Invalid decrypted key length: ${keysDecrypted.length}. or app need to recode.`)
-        }
         this.encKey = keysDecrypted.slice(0, 32)
         this.macKey = keysDecrypted.slice(32, 64)
     }
@@ -313,10 +308,10 @@ export default class WhatsAppClient {
             }
         } else {
             if (this.encKey) {
-                let logName = `log/${this.binConter++}-${tag}`;
+                let logName = `log/${this.startTime}-${this.binConter++}-${tag}`;
                 fs.writeFileSync(`${logName}.enc`, message)
                 const decrypted = this.decrypt(message)
-                fs.writeFileSync(`${logName}.dec`, decrypted)
+                fs.writeFileSync(logName, decrypted)
             }
             else console.log("GotBuffer", data);
         }
@@ -328,10 +323,11 @@ export default class WhatsAppClient {
         const hmacServer = data.slice(0, 32)
         console.log('hmacClient', hmac);
         console.log('hmacServer', hmacServer);
+        console.log('is', hmac.compare(hmacServer));
         if (hmac.compare(hmacServer) !== 0) {
             console.log('Hmac Miss Match');
         }
-        const cipher = createCipheriv('aes-256-cbc', this.encKey, data.slice(32, 32 + 16))
+        const cipher = createDecipheriv('aes-256-cbc', this.encKey, data.slice(32, 32 + 16))
         let decs = [cipher.update(data.slice(32 + 16))]
         decs.push(cipher.final())
         cipher.destroy()
