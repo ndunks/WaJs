@@ -59,7 +59,12 @@ export default class WhatsAppClient {
                         this.config.clientId,
                         true
                     ).then(response => {
+                        if (response.status != 200) {
+                            L(response)
+                            return reject('Init error: ' + response.status)
+                        }
                         if (!response || !response.ref) {
+                            L(response)
                             return reject('No server id')
                         }
                         const ttl = response.ttl || 20000
