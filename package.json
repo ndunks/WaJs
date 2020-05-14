@@ -6,7 +6,9 @@
   "author": "Mochamad Arifin",
   "license": "MIT",
   "scripts": {
-    "dev": "tsc-watch --onFirstSuccess 'nodemon --delay 0.5 -w dist -e js'"
+    "dev": "tsc-watch --onFirstSuccess 'nodemon --delay 0.5 -w dist -e js'",
+    "test": "ts-node -T test/index.ts",
+    "clean": "rm -rf dist dist-test"
   },
   "dependencies": {
     "curve25519-n": "^1.5.0",
@@ -15,7 +17,11 @@
     "ws": "^7.3.0"
   },
   "devDependencies": {
+    "@types/jasmine": "^3.5.10",
     "@types/ws": "^7.2.4",
+    "jasmine": "^3.5.0",
+    "nodemon": "^2.0.4",
+    "ts-node": "^8.10.1",
     "tsc-watch": "^4.2.3",
     "typescript": "^3.8.3"
   }

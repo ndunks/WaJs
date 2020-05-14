@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { randomBytes, createHmac, createCipheriv, createCipher, createDecipheriv } from "crypto";
+import { randomBytes, createHmac } from "crypto";
 import { arch, platform } from "os";
 import { CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg, WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig } from "./interfaces";
 import * as fs from 'fs'
