@@ -1,5 +1,5 @@
 // app2.b77125350eb0570a9fcd.js#cdjdachjig
-import Tags from "../tags";
+import BinaryTag from "./tags";
 import Dictionary from "../dictionary";
 import BufferReader from "./buffer-reader";
 import Wid from "../wid/wid";
@@ -10,7 +10,7 @@ function tryMakeWid(str: string) {
     try {
         return WidFactory.createWid(str)
     } catch (e) {
-        console.log('Reader.createWid FAIL', e);
+        L('reader: createWid FAIL', e);
         return str
     }
 }
@@ -18,7 +18,7 @@ export default class BinaryReader {
     READING_ATTR_FLAG: boolean = false;
     CURRENT_ATTR_KEY: string;
 
-    readString(buf: BufferReader, tag: number, autoCreateWid = false): string {
+    readString(buf: BufferReader, tag: BinaryTag, autoCreateWid = true): string {
         if (tag < 0)
             throw new Error("invalid start token readString" + tag);
         if (tag > 2 && tag < 236) {
@@ -27,24 +27,24 @@ export default class BinaryReader {
         }
         let tmpStr;
         switch (tag) {
-            case Tags.DICTIONARY_0:
-            case Tags.DICTIONARY_1:
-            case Tags.DICTIONARY_2:
-            case Tags.DICTIONARY_3:
+            case BinaryTag.DICTIONARY_0:
+            case BinaryTag.DICTIONARY_1:
+            case BinaryTag.DICTIONARY_2:
+            case BinaryTag.DICTIONARY_3:
                 let len = buf.readByte();
-                return this.getTokenDouble(tag - Tags.DICTIONARY_0, len);
-            case Tags.LIST_EMPTY:
+                return this.getTokenDouble(tag - BinaryTag.DICTIONARY_0, len);
+            case BinaryTag.LIST_EMPTY:
                 return;
-            case Tags.BINARY_8:
+            case BinaryTag.BINARY_8:
                 tmpStr = this.readString(buf, buf.readByte())
                 return this.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
-            case Tags.BINARY_20:
+            case BinaryTag.BINARY_20:
                 tmpStr = this.readString(buf, buf.readInt20())
                 return this.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
-            case Tags.BINARY_32:
+            case BinaryTag.BINARY_32:
                 tmpStr = this.readString(buf, buf.readInt32())
                 return this.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
-            case Tags.JID_PAIR:
+            case BinaryTag.JID_PAIR:
                 let f = this.readString(buf, buf.readByte())
                 let h = this.readString(buf, buf.readByte())
                 if (void 0 !== f && void 0 !== h) {
@@ -54,18 +54,37 @@ export default class BinaryReader {
                 if (void 0 !== h)
                     return h;
                 throw new Error("invalid jid " + f + "," + h + " " + buf.debugInfo());
-            case Tags.NIBBLE_8:
-            case Tags.HEX_8:
+            case BinaryTag.JID_AD:
+                let agent = buf.readByte()
+                let device = buf.readByte()
+                let user = this.readString(buf, buf.readByte());
+
+                if (!user) {
+                    throw new Error(`invalid JID_AD agent:${agent} device:${device} user:${user}`);
+                }
+                return tryMakeWid(
+                    agent && device ? `${user}.${agent}:${device}@c.us` :
+                        agent ? `${user}.${agent}@c.us` :
+                            device ? `${user}:${device}@c.us` : `${user}@c.us`
+                );
+
+            case BinaryTag.NIBBLE_8:
+            case BinaryTag.HEX_8:
                 return this.readPacked8(tag, buf);
             default:
                 //throw LOG(1, !0)(d(), n, t, a, e.debugInfoWithPadding()),
                 throw new Error(`invalid string tag: ${tag}, attr_key: ${this.CURRENT_ATTR_KEY}`)
         }
     }
-    readList(e, t) {
-        for (var a = [], n = this.readListSize(e, t), i = 0; i < n; i++)
-            a.push(this.readNode(e));
-        return a
+    readList(buf: BufferReader, byteTag: BinaryTag) {
+        let list = []
+        let size = this.readListSize(buf, byteTag)
+        L('reader: readList', size);
+        for (let i = 0; i < size; i++) {
+            L('reader: readList', i)
+            list.push(this.readNode(buf));
+        }
+        return list
     }
     readPacked8(tag: number, buf: BufferReader) {
         let a, n, i, r, s, o: number
@@ -82,9 +101,9 @@ export default class BinaryReader {
     }
     unpackByte(buf: BufferReader, tag, len: number) {
         switch (tag) {
-            case Tags.NIBBLE_8:
+            case BinaryTag.NIBBLE_8:
                 return this.unpackNibble(buf, len);
-            case Tags.HEX_8:
+            case BinaryTag.HEX_8:
                 return this.unpackHex(buf, len);
             default:
                 throw new Error("unpack non-nibble/hex type: " + tag)
@@ -103,21 +122,26 @@ export default class BinaryReader {
         throw new Error("invalid hex to unpack: " + e)
     }
 
-    readListSize(buf: BufferReader, tag) {
-        if (tag === Tags.LIST_EMPTY)
-            return 0;
-        if (tag === Tags.LIST_8)
-            return buf.readByte();
-        if (tag === Tags.LIST_16)
-            return buf.readInt16();
-        throw new Error("invalid list size " + buf.debugInfo())
+    readListSize(buf: BufferReader, tag: BinaryTag): number {
+        switch (tag) {
+            case BinaryTag.LIST_EMPTY:
+                return 0;
+            case BinaryTag.LIST_8:
+                return buf.readByte();
+            case BinaryTag.LIST_16:
+                return buf.readInt16();
+            default:
+                // console.error('reader: readListSize', `invalid list size. tag ${tag} ${String.fromCharCode(tag)}. ${buf.debugInfo()}`)
+                // return 0
+                throw new Error(`invalid list size. tag ${tag} ${String.fromCharCode(tag)}. ${buf.debugInfo()}`)
+        }
     }
 
-    getToken(tag: number) {
-        if (tag < 3 || tag >= Dictionary.singleByte.length) {
-            console.error("Undefined Byte Token")
+    getToken(no: number) {
+        if (no < 3 || no >= Dictionary.singleByte.length) {
+            throw new Error("Undefined Byte Token")
         }
-        return Dictionary.singleByte[tag]
+        return Dictionary.singleByte[no]
     }
 
     getTokenDouble(tag: number, len: number) {
@@ -132,37 +156,42 @@ export default class BinaryReader {
         let byteTag = buf.readByte()
         const listSize = this.readListSize(buf, byteTag)
         byteTag = buf.readByte();
-        if (byteTag == Tags.STREAM_END) {
+        if (byteTag == BinaryTag.STREAM_END) {
             throw new Error("Unexpected end tag");
         }
         let tag = this.readString(buf, byteTag)
-        if (!listSize || !tag) {
-            throw new Error("Invalid node. 0 list or empty tag");
+        if (listSize === 0 || !tag) {
+            throw new Error(`Invalid node. 0 list (${listSize}) or empty tag (${tag}).`);
         }
+
         let attrSize = listSize - 2 + listSize % 2 >> 1;
         let attr: { [key: string]: string } = this.readAttributes(buf, attrSize);
-        let data;
-        if (listSize % 2 == 1)
+        if (listSize % 2 == 1) {
+            L('reader: readNode', tag, 'NO DATA', BinaryTag[byteTag]);
             return { tag, attr }
+        }
 
-        let a = buf.readByte()
-        if (this.isListTag(a))
-            data = this.readList(buf, a);
-        else if (a === Tags.BINARY_8) {
+        let data;
+
+        byteTag = buf.readByte()
+        L('reader: readNode', tag, 'Data', BinaryTag[byteTag]);
+        if (this.isListTag(byteTag)) {
+            data = this.readList(buf, byteTag);
+        } else if (byteTag === BinaryTag.BINARY_8) {
             var c = buf.readByte();
             data = buf.readBytes(c)
-        } else if (a === Tags.BINARY_20) {
+        } else if (byteTag === BinaryTag.BINARY_20) {
             var u = buf.readInt20();
             data = buf.readBytes(u)
-        } else if (a === Tags.BINARY_32) {
+        } else if (byteTag === BinaryTag.BINARY_32) {
             var l = buf.readInt32();
             data = buf.readBytes(l)
         } else
-            data = this.readString(buf, a);
+            data = this.readString(buf, byteTag);
         return { tag, attr, data }
     }
     isListTag(tag: number) {
-        return tag === Tags.LIST_EMPTY || tag === Tags.LIST_8 || tag === Tags.LIST_16
+        return tag === BinaryTag.LIST_EMPTY || tag === BinaryTag.LIST_8 || tag === BinaryTag.LIST_16
     }
     readAttributes(buf: BufferReader, len: number) {
         this.READING_ATTR_FLAG = true

@@ -21,6 +21,7 @@ function nodeDataDumper(data) {
 }
 describe("Binary", () => {
     it("Read Small", () => {
+        return pending('SKIP')
         const file = '1589356438-38'
         const buf = new BinaryBuffer(fs.readFileSync(`${dir}/${file}`))
         const bufferReader = new BufferReader(buf)
@@ -29,8 +30,8 @@ describe("Binary", () => {
         console.log(res);
 
     })
-    it("Read All Node", () => {
-        const files = fs.readdirSync(dir)
+    it("Read preempt", () => {
+        const files = fs.readdirSync(dir).filter(v => v.match(/^preempt.+30$/))
         for (let file of files) {
             const buf = new BinaryBuffer(fs.readFileSync(`${dir}/${file}`))
             const bufferReader = new BufferReader(buf)

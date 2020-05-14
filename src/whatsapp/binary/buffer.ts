@@ -34,13 +34,13 @@ function getDataView(e: BinaryBuffer) {
 function markRead(buf: BinaryBuffer, size: number) {
     if (size < 0)
         throw new Error("ReadError: given negative number of bytes to read");
-    let n = buf._readIndex
-    let a = n + size
+    let index = buf._readIndex
+    let a = index + size
     if (a > buf._readEndIndex)
-        throw new Error(n === buf._readEndIndex ? "ReadError: tried to read from depleted binary" : "ReadError: tried to read beyond end of binary");
+        throw new Error(index === buf._readEndIndex ? "ReadError: tried to read from depleted binary" : "ReadError: tried to read beyond end of binary");
     buf._readIndex = a
     buf._hiddenReads || (buf._earliestIndex = a)
-    return n
+    return index
 }
 
 function g(e, t) {

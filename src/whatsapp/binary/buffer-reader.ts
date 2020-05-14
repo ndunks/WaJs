@@ -30,6 +30,6 @@ export default class BufferReader {
         return this.buf.readBuffer(len)
     }
     debugInfo() {
-        return `Buf[${this.buf.size}]: ${this.buf}`;
+        return `Buf[${this.buf.size()}]: ${this.buf._readIndex}`;
     }
 }
