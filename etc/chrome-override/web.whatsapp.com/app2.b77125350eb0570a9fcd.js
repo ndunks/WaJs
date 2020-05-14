@@ -80857,7 +80857,9 @@
             this.Node = a("bcjjbcbjaa"),
             u.default.supportsFeature(u.default.F.MD_BACKEND) || (this.read = function(e) {
                 return f.decrypt(e).then((function(e) {
-                    return l.readNode(new d(e))
+                    let read = l.readNode(new d(e))
+                    console.log('READ', read)
+                    return read
                 }
                 ))
             }
@@ -80865,6 +80867,7 @@
             this.write = function(e) {
                 return Promise.callSynchronously((function() {
                     var t = new r;
+                    console.log('WRITE', e)
                     return s.writeNode(t, e),
                     f.encrypt(t.toBuffer())
                 }

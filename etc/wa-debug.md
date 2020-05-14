@@ -28,8 +28,24 @@ String data with ! as begining is special meaning
 - BinaryProtocol.read will Decrypt data
 - readNode
 
+You can add Log function when BinaryProtocol Read/Write (not encrypted)
+
 ``` js
-        return f.decrypt(e).then((function(e) {
-            return l.readNode(new d(e))
-        }
+this.read = function(e) {
+    return f.decrypt(e).then((function(e) {
+        let read = l.readNode(new d(e))
+        console.log('READ', read)
+        return read
+    }
+    ))
+}
+this.write = function(e) {
+    return Promise.callSynchronously((function() {
+        var t = new r;
+        console.log('WRITE', e)
+        return s.writeNode(t, e),
+        f.encrypt(t.toBuffer())
+    }
+    ))
+}
 ```
