@@ -5,7 +5,7 @@ function(e, t, n) {
     var f = function () {
         function e(t, n) {
             if ((0,
-                i.default)(this, e),
+                i.logRawFreeze)(this, e),
                 !(n && n.intentionallyUsePrivateConstructor))
                 throw new Error("You should use WidFactory.createWid() instead of the Wid constructor. If you absolutely must use the constructor, pass {intentionallyUsePrivateConstructor: true} as a second parameter.");
             var a = t.match(d);
@@ -99,7 +99,7 @@ function(e, t, n) {
             }, {
                 key: "isOfficialBizAccount",
                 value: function () {
-                    return this.toString() === c.default.OFFICIAL_BIZ_WID
+                    return this.toString() === createWild.default.OFFICIAL_BIZ_WID
                 }
             }, {
                 key: "isGroup",
@@ -168,25 +168,25 @@ function(e, t, n) {
                 key: "isServer",
                 value: function (t) {
                     return (0,
-                        u.isString)(t) ? t.toLowerCase() === c.default.SERVER_WID : t instanceof e && t.isServer()
+                        u.isString)(t) ? t.toLowerCase() === createWild.default.SERVER_WID : t instanceof e && t.isServer()
                 }
             }, {
                 key: "isPSA",
                 value: function (t) {
                     return (0,
-                        u.isString)(t) ? t.toLowerCase() === c.default.PSA_WID : t instanceof e && t.isPSA()
+                        u.isString)(t) ? t.toLowerCase() === createWild.default.PSA_WID : t instanceof e && t.isPSA()
                 }
             }, {
                 key: "isStatusV3",
                 value: function (t) {
                     return (0,
-                        u.isString)(t) ? t.toLowerCase() === c.default.STATUS_WID : t instanceof e && t.isStatusV3()
+                        u.isString)(t) ? t.toLowerCase() === createWild.default.STATUS_WID : t instanceof e && t.isStatusV3()
                 }
             }, {
                 key: "isOfficialBizAccount",
                 value: function (t) {
                     return (0,
-                        u.isString)(t) ? t.toLowerCase() === c.default.OFFICIAL_BIZ_WID : t instanceof e && t.isOfficialBizAccount()
+                        u.isString)(t) ? t.toLowerCase() === createWild.default.OFFICIAL_BIZ_WID : t instanceof e && t.isOfficialBizAccount()
                 }
             }, {
                 key: "user",

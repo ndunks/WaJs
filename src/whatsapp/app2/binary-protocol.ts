@@ -1,17 +1,16 @@
 // n = a("cfjecfhbfg") // module export
-const n = require
-const e = module
+// const n = require
+// const e = module
 // i = n(a("dfadhaifh"))
-let i = {
-    default: function (e, t?) {
-        return t || (t = e.slice(0)),
-            Object.freeze(Object.defineProperties(e, {
-                raw: {
-                    value: Object.freeze(t)
-                }
-            }))
-    }
+function logRawFreeze(e, t?) {
+    return t || (t = e.slice(0)),
+        Object.freeze(Object.defineProperties(e, {
+            raw: {
+                value: Object.freeze(t)
+            }
+        }))
 }
+
 
 // r = n(a("ccebfaijda"))
 let r = {
@@ -48,17 +47,30 @@ function d() {
             ,
             e */
     return function () {
-        return i.default(["\n                Unexpected token in binary protocol read. Token : ", "\n                lastTag: ", "\n                lastAttributeKey: ", "\n                ", "\n              "])
+        return logRawFreeze(["\n                Unexpected token in binary protocol read. Token : ", "\n                lastTag: ", "\n                lastAttributeKey: ", "\n                ", "\n              "])
     }
 }
-function c(e) {
-    try {
-        return s.createWid(e)
-    } catch (t) {
-        return e
-    }
+function createWild(e) {
+    // try {
+    //     return s.createWid(e)
+    // } catch (t) {
+    //     return e
+    // }
 }
+const e = require('../app/dictionary')
 
+export default class BinaryProtocol {
+    t = ""
+    a = ""
+    n = e.singleByte
+    i = e.doubleByte
+    s = e.nibbleDecode
+
+    readNode(e: Buffer){
+
+    }
+
+}
 e.exports = function (e) {
     var t = ""
         , a = ""
@@ -129,19 +141,19 @@ e.exports = function (e) {
                     return;
                 case r.default.BINARY_8:
                     return i = e.readString(e.readByte()),
-                        this.isAttr && s && o.default.isWid(i) ? c(i) : i;
+                        this.isAttr && s && o.default.isWid(i) ? createWild(i) : i;
                 case r.default.BINARY_20:
                     return i = e.readString(e.readInt20()),
-                        this.isAttr && s && o.default.isWid(i) ? c(i) : i;
+                        this.isAttr && s && o.default.isWid(i) ? createWild(i) : i;
                 case r.default.BINARY_32:
                     return i = e.readString(e.readInt32()),
-                        this.isAttr && s && o.default.isWid(i) ? c(i) : i;
+                        this.isAttr && s && o.default.isWid(i) ? createWild(i) : i;
                 case r.default.JID_PAIR:
                     var f = this.readString(e, e.readByte())
                         , h = this.readString(e, e.readByte());
                     if (void 0 !== f && void 0 !== h) {
                         var p = f + "@" + h;
-                        return s && o.default.isWid(p) ? c(p) : p
+                        return s && o.default.isWid(p) ? createWild(p) : p
                     }
                     if (void 0 !== h)
                         return h;
