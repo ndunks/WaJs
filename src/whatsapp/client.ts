@@ -3,7 +3,7 @@ import { randomBytes, createHmac } from "crypto";
 import { arch, platform } from "os";
 import { CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg, WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig } from "./interfaces";
 import * as fs from 'fs'
-import { base64ObjectToBuffer, bufferObjectToBase64 } from "./utils";
+import { base64ObjectToBuffer, bufferObjectToBase64 } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys, AESDecrypt } from "./secure";
 
 export default class WhatsAppClient {
@@ -62,13 +62,21 @@ export default class WhatsAppClient {
                         if (!response || !response.ref) {
                             return reject('No server id')
                         }
-                        const initNewLogin = () => this.loginQRCode(response.ref, response.ttl || 20000)
+                        const ttl = response.ttl || 20000
                         // Has stored session? restore it.
                         if (this.config.tokens) {
-                            return this.loginRestore(response.ref, response.ttl || 20000)
-                                .catch(initNewLogin)
+                            return this.loginRestore(response.ref, ttl)
+                                .then(res => L('loginRestore: OK'))
+                                .catch(err => {
+                                    E('loginRestore:', err)
+                                    if (fs.existsSync(this.authFile)) {
+                                        L('Deleting expired config');
+                                        //fs.unlinkSync(this.authFile)
+                                    }
+                                    return this.loginQRCode(response.ref, ttl)
+                                })
                         }
-                        return initNewLogin()
+                        return this.loginQRCode(response.ref, ttl)
 
                     }).then(resolve).catch(reject)
                 }
@@ -91,14 +99,10 @@ export default class WhatsAppClient {
                 this.config.clientId.toString('base64'),
                 'takeover'
             ).then(response => {
-                console.log('restoreSession', response);
-                if (response.status != 200 && fs.existsSync(this.authFile)) {
-                    console.log('Deleting expired config');
-                    fs.unlinkSync(this.authFile)
-                }
+                L('restoreSession:', response);
                 switch (response.status) {
                     case 200:
-                        return //must received Conn, nothing todo here
+                        return resolve(response)//must received Conn, nothing todo here
                     case 401:
                         return reject('Unpaired from the phone')
                     case 403:
@@ -108,7 +112,6 @@ export default class WhatsAppClient {
                     case 409:
                         return reject('Logged in from another location')
                     default:
-                        console.log(response)
                         return reject('Unhandled restore response: ' + response.status)
                 }
             })
@@ -123,7 +126,7 @@ export default class WhatsAppClient {
                 (err ? reject(err) : resolve(info))
             }
             const checker = () => {
-                console.log('Refreshing QR Code..')
+                L('Refreshing QR Code..')
                 this.sendCmd<CmdInitResponse>('admin', 'Conn', 'reref').then(
                     response => {
                         switch (response.status) {
@@ -138,7 +141,7 @@ export default class WhatsAppClient {
                                 timer = setTimeout(checker, 3000)
                                 break;
                             default:
-                                console.log('QRCode ref Unknown', response)
+                                L('QRCode ref Unknown', response)
                                 reject('QRCode ref Unknown')
                                 break
                         }
@@ -146,7 +149,7 @@ export default class WhatsAppClient {
                 ).catch(reject)
             }
 
-            console.log('Please Login..')
+            L('Please Login..')
             this.generateQRCode(ref)
             timer = setTimeout(checker, ttl)
         })
@@ -158,29 +161,30 @@ export default class WhatsAppClient {
             this.config.keys.publicKey.toString('base64'),
             this.config.clientId.toString('base64')
         ].join(',')
-        console.log('QRCode', qrContent);
+        L('QRCode', qrContent);
         require('qrcode-terminal').generate(qrContent, { small: true })
     }
 
     private handleWhatsAppConn(info: WhatsAppServerMsgConn) {
-        console.log('handleWhatsAppConn');
         // On restored session is not contain secret
         if (info.secret) {
+            L('handleWhatsAppConn: decrypt secret');
             this.config.serverSecret = Buffer.from(info.secret, 'base64');
             const result = decryptEncryptionKeys(this.config.serverSecret, this.config.keys.privateKey)
             this.config.aesKey = result.aesKey
             this.config.macKey = result.macKey
+        } else {
+            L('handleWhatsAppConn: no secret, its resumed.');
         }
         if (!this.config.aesKey) {
             return this.onReady(null, 'No Encryptions Keys!')
         }
-        // Save creds
         this.config.tokens = {
             client: Buffer.from(info.clientToken, 'base64'),
             server: Buffer.from(info.serverToken, 'base64'),
             browser: Buffer.from(info.browserToken, 'base64')
         }
-        // Save config
+        // Save creds
         fs.writeFileSync(this.authFile, JSON.stringify(bufferObjectToBase64(this.config)))
 
         // call on ready
@@ -192,7 +196,7 @@ export default class WhatsAppClient {
         const tag = data.slice(0, firstCommaPos).toString('ascii')
         const message: string | Buffer = data.slice(firstCommaPos + 1)
         if (typeof message == 'string') {
-            //console.log('GotString', data);
+            //L('GotString', data);
             if (tag[0] == 's') {
                 //server message
                 const params: any[] = JSON.parse(message);
@@ -202,7 +206,7 @@ export default class WhatsAppClient {
                 this.cmdStack.delete(tag)
                 handle.resolve(JSON.parse(message))
             } else {
-                console.log('Unhandled CMD Response', tag, message)
+                L('Unhandled CMD Response', tag, message)
             }
         } else {
             this.decrypt(message)
@@ -213,9 +217,15 @@ export default class WhatsAppClient {
         if (!this.config.aesKey) {
             throw new Error("GotBuffer but no key to decrypt")
         }
+        if (!this.config.macKey) {
+            throw new Error("no hmac key to verify")
+        }
         const hmac = createHmac('sha256', this.config.macKey).update(data.slice(32)).digest()
         const hmacServer = data.slice(0, 32)
         if (hmac.compare(hmacServer) !== 0) {
+            L('HMAC gen', hmac)
+            L('HMAC srv', hmacServer)
+            L('HMAC ===', hmac.compare(hmacServer))
             throw new Error('Hmac Miss Match');
         }
         return AESDecrypt(this.config.aesKey, data.slice(32, 32 + 16), data.slice(32 + 16))
@@ -227,7 +237,7 @@ export default class WhatsAppClient {
     }
 
     private onClose = (code: Number, message: String) => {
-        console.log("CLOSED!", code, message);
+        L("CLOSED!", code, message);
     }
     private onError = (error: Error) => {
         console.error("ERR!", error);
@@ -240,7 +250,7 @@ export default class WhatsAppClient {
                 const message = `${tag},${JSON.stringify(
                     [scope, cmd, ...args]
                 )}`
-                console.log('SEND', message);
+                L('SEND', message);
                 this.cmdStack.set(tag, { message, resolve, reject })
                 this.ws.send(message)
             }
@@ -257,7 +267,7 @@ export default class WhatsAppClient {
                 if (this.serverCmdHandlers[args.type]) {
                     this.serverCmdHandlers[args.type](args)
                 } else {
-                    console.log('WhatsAppServerCommand', cmd, args)
+                    L('handleServerMessage: unhandled cmd.', cmd, args)
                 }
                 break;
             case 'Conn':
@@ -266,20 +276,20 @@ export default class WhatsAppClient {
                 break;
             default:
                 this.serverData[cmd] = params[0]
-                console.log('UnhandledServerMsg', cmd, params)
+                L('handleServerMessage: ignored', cmd, params)
                 break;
         }
     }
     private serverCmdHandlers = {
         challenge: (args: WhatsAppServerMsgCmdChallenge) => {
-            console.log('Handling challenge');
+            L('Handling challenge');
             const signed = this.sign(Buffer.from(args.challenge, 'base64'))
             return this.sendCmd('admin', 'challenge',
                 signed.toString('base64'),
                 this.config.tokens.server.toString('base64'),
                 this.config.clientId.toString('base64'))
                 .then(
-                    res => console.log('Chalenge response', res)
+                    res => L('Chalenge response', res)
                 )
         }
     }

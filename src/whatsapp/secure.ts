@@ -58,12 +58,13 @@ export function decryptEncryptionKeys(secret: Buffer, privateKey: Buffer) {
         sharedSecretExpanded.slice(64),
         secret.slice(64)
     ])
-
+    L('keysEncrypted', keysEncrypted.length, keysEncrypted)
     let keysDecrypted = AESDecrypt(
         sharedSecretExpanded.slice(0, 32),
         keysEncrypted.slice(0, 16),
         keysEncrypted.slice(16)
     )
+    L('keysDecrypted', keysDecrypted.length, keysDecrypted)
 
     return {
         aesKey: keysDecrypted.slice(0, 32),
