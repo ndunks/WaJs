@@ -51,7 +51,6 @@ export function decryptEncryptionKeys(secret: Buffer, privateKey: Buffer) {
     ).update(tmp).digest()
 
     if (hmacValidation.compare(secret.slice(32, 64)) !== 0) {
-        this.close()
         throw new Error('Encryption keys invalid');
     }
     //sharedSecretExpanded.length - 64  + serverSecret.length - 64

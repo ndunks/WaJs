@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "tsc-watch --onFirstSuccess 'nodemon --delay 0.5 -w dist -e js'",
     "test": "ts-node -T test/index.ts",
+    "test-watch": "nodemon --delay 0.4 -w test -w src -e ts -x 'ts-node test/index.ts'",
     "clean": "rm -rf dist dist-test"
   },
   "dependencies": {

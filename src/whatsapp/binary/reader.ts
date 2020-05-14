@@ -18,7 +18,7 @@ export default class BinaryReader {
     READING_ATTR_FLAG: boolean = false;
     CURRENT_ATTR_KEY: string;
 
-    readString(buf: BufferReader, tag: number, autoCreateWid = false) {
+    readString(buf: BufferReader, tag: number, autoCreateWid = false): string {
         if (tag < 0)
             throw new Error("invalid start token readString" + tag);
         if (tag > 2 && tag < 236) {
@@ -37,15 +37,12 @@ export default class BinaryReader {
                 return;
             case Tags.BINARY_8:
                 tmpStr = this.readString(buf, buf.readByte())
-                console.error('Not Implemented: Tags.BINARY_8');
                 return this.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
             case Tags.BINARY_20:
                 tmpStr = this.readString(buf, buf.readInt20())
-                console.error('Not Implemented: Tags.BINARY_20');
                 return this.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
             case Tags.BINARY_32:
                 tmpStr = this.readString(buf, buf.readInt32())
-                console.error('Not Implemented: Tags.BINARY_32');
                 return this.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
             case Tags.JID_PAIR:
                 let f = this.readString(buf, buf.readByte())
@@ -132,37 +129,37 @@ export default class BinaryReader {
     }
 
     readNode(buf: BufferReader) {
-        let tag = buf.readByte()
-        const listSize = this.readListSize(buf, tag)
-        tag = buf.readByte();
-        if (tag == Tags.STREAM_END) {
+        let byteTag = buf.readByte()
+        const listSize = this.readListSize(buf, byteTag)
+        byteTag = buf.readByte();
+        if (byteTag == Tags.STREAM_END) {
             throw new Error("Unexpected end tag");
         }
-        let str = this.readString(buf, tag)
-        if (!listSize || !str) {
+        let tag = this.readString(buf, byteTag)
+        if (!listSize || !tag) {
             throw new Error("Invalid node. 0 list or empty tag");
         }
         let attrSize = listSize - 2 + listSize % 2 >> 1;
-        console.log('readNode', listSize, tag, str, attrSize);
-        let attrs = this.readAttributes(buf, attrSize);
-        let o;
+        let attr: { [key: string]: string } = this.readAttributes(buf, attrSize);
+        let data;
         if (listSize % 2 == 1)
-            return [str, attrs, void 0];
+            return { tag, attr }
+
         let a = buf.readByte()
         if (this.isListTag(a))
-            o = this.readList(buf, a);
+            data = this.readList(buf, a);
         else if (a === Tags.BINARY_8) {
             var c = buf.readByte();
-            o = buf.readBytes(c)
+            data = buf.readBytes(c)
         } else if (a === Tags.BINARY_20) {
             var u = buf.readInt20();
-            o = buf.readBytes(u)
+            data = buf.readBytes(u)
         } else if (a === Tags.BINARY_32) {
             var l = buf.readInt32();
-            o = buf.readBytes(l)
+            data = buf.readBytes(l)
         } else
-            o = this.readString(buf, a);
-        return [str, attrs, o]
+            data = this.readString(buf, a);
+        return { tag, attr, data }
     }
     isListTag(tag: number) {
         return tag === Tags.LIST_EMPTY || tag === Tags.LIST_8 || tag === Tags.LIST_16

@@ -1,4 +1,4 @@
-import WhatsAppClient from "@/whatsapp/client";
+import WhatsAppClient from "./whatsapp/client";
 
 const client = new WhatsAppClient();
 client.connect().then(
