@@ -1,28 +1,26 @@
-function base64ObjectToBuffer(obj) {
-    Object.keys(obj).forEach(
-        k => {
-            if (typeof obj[k] == 'string') {
-                L('bufferObjectToBase64: convert to Buffer',k)
-                obj[k] = Buffer.from(obj[k], 'base64')
-            } else if (typeof obj[k] == 'object') {
-                base64ObjectToBuffer(obj[k])
-            }
-        }
+import { readFileSync, writeFileSync } from "fs";
+import { WhatsAppClientConfig } from "./whatsapp/interfaces"
+
+function configLoad(file: string) {
+    const cfg: WhatsAppClientConfig = {} as any
+    const obj = JSON.parse(readFileSync(file, 'utf8'))
+    cfg.serverSecret = Buffer.from(obj.serverSecret, 'base64')
+    cfg.aesKey = Buffer.from(obj.aesKey, 'base64')
+    cfg.macKey = Buffer.from(obj.macKey, 'base64')
+    Object.keys(obj.keys).forEach(
+        k => cfg.keys[k] = Buffer.from(obj.keys[k], 'base64')
     )
-    return obj
+    return cfg
 }
-function bufferObjectToBase64(obj) {
-    Object.keys(obj).forEach(
-        k => {
-            if (obj[k] instanceof Buffer) {
-                L('bufferObjectToBase64: convert to string',k)
-                obj[k] = obj[k].toString('base64')
-            } else if (typeof obj[k] == 'object') {
-                bufferObjectToBase64(obj[k])
-            }
-        }
+function configStore(file: string, cfg: WhatsAppClientConfig) {
+    const obj: any = Object.assign({}, cfg)
+    obj.serverSecret = cfg.serverSecret.toString('base64')
+    obj.aesKey = cfg.aesKey.toString('base64')
+    obj.macKey = cfg.macKey.toString('base64')
+    Object.keys(cfg.keys).forEach(
+        k => obj.keys[k] = cfg.keys[k].toString('base64')
     )
-    return obj
+    return writeFileSync(file, JSON.stringify(obj, null, 2))
 }
 
-export { bufferObjectToBase64, base64ObjectToBuffer }
+export { configStore, configLoad }

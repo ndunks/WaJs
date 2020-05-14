@@ -3,7 +3,7 @@ import { randomBytes, createHmac } from "crypto";
 import { arch, platform } from "os";
 import { CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg, WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig } from "./interfaces";
 import * as fs from 'fs'
-import { base64ObjectToBuffer, bufferObjectToBase64 } from "../utils";
+import { configLoad, configStore } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys, AESDecrypt } from "./secure";
 
 export default class WhatsAppClient {
@@ -31,11 +31,11 @@ export default class WhatsAppClient {
 
     constructor(private authFile = '.auth') {
         if (fs.existsSync(authFile)) {
-            this.config = base64ObjectToBuffer(JSON.parse(fs.readFileSync(authFile, 'ascii')))
+            this.config = configLoad(this.authFile)
         } else {
             // default config
             this.config = {
-                clientId: randomBytes(16),
+                clientId: randomBytes(16).toString('base64'),
                 keys: generateKeyPair()
             }
         }
@@ -56,7 +56,7 @@ export default class WhatsAppClient {
                     this.sendCmd<CmdInitResponse>('admin', 'init',
                         this.version.split('.').map(v => parseInt(v)),
                         [this.clientName, platform(), arch()],
-                        this.config.clientId.toString('base64'),
+                        this.config.clientId,
                         true
                     ).then(response => {
                         if (!response || !response.ref) {
@@ -94,9 +94,9 @@ export default class WhatsAppClient {
         return new Promise((resolve, reject) => {
             this.onReady = (info, err) => err ? reject(err) : resolve(info)
             this.sendCmd('admin', 'login',
-                this.config.tokens.client.toString('base64'),
-                this.config.tokens.server.toString('base64'),
-                this.config.clientId.toString('base64'),
+                this.config.tokens.client,
+                this.config.tokens.server,
+                this.config.clientId,
                 'takeover'
             ).then(response => {
                 L('restoreSession:', response);
@@ -159,7 +159,7 @@ export default class WhatsAppClient {
         const qrContent = [
             serverId,
             this.config.keys.publicKey.toString('base64'),
-            this.config.clientId.toString('base64')
+            this.config.clientId
         ].join(',')
         L('QRCode', qrContent);
         require('qrcode-terminal').generate(qrContent, { small: true })
@@ -180,12 +180,12 @@ export default class WhatsAppClient {
             return this.onReady(null, 'No Encryptions Keys!')
         }
         this.config.tokens = {
-            client: Buffer.from(info.clientToken, 'base64'),
-            server: Buffer.from(info.serverToken, 'base64'),
-            browser: Buffer.from(info.browserToken, 'base64')
+            client: info.clientToken,
+            server: info.serverToken,
+            browser: info.browserToken
         }
         // Save creds
-        fs.writeFileSync(this.authFile, JSON.stringify(bufferObjectToBase64(this.config)))
+        configStore(this.authFile, this.config)
 
         // call on ready
         this.onReady(info);
@@ -286,8 +286,8 @@ export default class WhatsAppClient {
             const signed = this.sign(Buffer.from(args.challenge, 'base64'))
             return this.sendCmd('admin', 'challenge',
                 signed.toString('base64'),
-                this.config.tokens.server.toString('base64'),
-                this.config.clientId.toString('base64'))
+                this.config.tokens.server,
+                this.config.clientId)
                 .then(
                     res => L('Chalenge response', res)
                 )

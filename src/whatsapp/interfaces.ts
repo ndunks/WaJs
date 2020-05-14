@@ -1,7 +1,7 @@
 
 export interface WhatsAppClientConfig {
     /** 16 Byte ID Auto Generated */
-    clientId: Buffer
+    clientId: string
     /** base64 secret from server contains encrypted aesKey and macKey */
     serverSecret?: Buffer
     /** Encrypt decrypt AES */
@@ -17,9 +17,9 @@ export interface WhatsAppClientConfig {
     }
     /** Tokens from server, to relogin session */
     tokens?: {
-        client: Buffer
-        server: Buffer
-        browser: Buffer
+        client: string
+        server: string
+        browser: string
     }
 }
 
