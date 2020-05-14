@@ -31,13 +31,15 @@ describe("Binary", () => {
 
     })
     it("Read preempt", () => {
-        const files = fs.readdirSync(dir).filter(v => v.match(/^preempt.+30$/))
+        const files = fs.readdirSync(dir).filter(v => v.match(/^preempt/))
         for (let file of files) {
             const buf = new BinaryBuffer(fs.readFileSync(`${dir}/${file}`))
             const bufferReader = new BufferReader(buf)
             const reader = new BinaryReader();
-            let res = reader.readNode(bufferReader)
-            console.log(file, res.tag, res.attr, nodeDataDumper(res.data));
+            expect(() => {
+                let res = reader.readNode(bufferReader)
+                console.log(file, res.tag, res.attr, nodeDataDumper(res.data));
+            }).not.toThrow()
         }
     })
 })
