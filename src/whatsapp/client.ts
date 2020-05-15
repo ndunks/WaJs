@@ -6,11 +6,10 @@ import {
 } from "./interfaces";
 import * as fs from 'fs'
 import { configLoad, configStore, Color } from "../utils";
-import { generateKeyPair, decryptEncryptionKeys, AESDecrypt, AESEncrypt } from "./secure";
-import { EventEmitter } from "events";
+import { generateKeyPair, decryptEncryptionKeys } from "./secure";
 import authRestoreTakeOver from "./auth/restore-takeover";
 import WASocket from "./wa-socket";
-import { commandTagHandlers } from "./handler";
+import WhatsApp from ".";
 
 export default class Client {
     /** This app name */
@@ -40,7 +39,7 @@ export default class Client {
     private messageConter: number = 0
     protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void
 
-    constructor(private authFile = '.auth', private event: EventEmitter) {
+    constructor(private authFile = '.auth', private event: WhatsApp) {
         if (fs.existsSync(authFile)) {
             this.config = configLoad(this.authFile)
         } else {
@@ -56,7 +55,7 @@ export default class Client {
         return new Promise<WhatsAppServerMsgConn>(
             (resolve, reject) => {
 
-                this.ws = new WASocket(this.event)
+                this.ws = new WASocket(this.event, this.config)
                 const onOpen = () => {
                     // Swap error listener
                     this.event.removeListener("error", reject)
@@ -70,6 +69,7 @@ export default class Client {
                         if (response.status != 200) {
                             L(response)
                             reject('Init error: ' + response.status)
+                            this.close()
                         } else if (!response || !response.ref) {
                             L(response)
                             reject('No server id')
@@ -95,7 +95,7 @@ export default class Client {
                 // Fail on early error
                 this.event.once("error", reject)
                 this.event.once("open", onOpen)
-                this.event.on("message", this.onMessage)
+                this.event.on("server-message", this.handleServerMessage.bind(this))
             }
         )
     }
@@ -106,13 +106,10 @@ export default class Client {
         }
         // On restored session is not contain secret
         if (info.secret) {
-            L('handleWhatsAppConn: decrypt secret');
             this.config.serverSecret = Buffer.from(info.secret, 'base64');
             const result = decryptEncryptionKeys(this.config.serverSecret, this.config.keys.privateKey)
             this.config.aesKey = result.aesKey
             this.config.macKey = result.macKey
-        } else {
-            L('handleWhatsAppConn: no secret, its resumed.');
         }
 
         if (!this.config.aesKey) {
@@ -130,71 +127,14 @@ export default class Client {
         this.onReady(info);
     }
 
-    private onMessage = (tag: string, message: string | Buffer) => {
-        let logs = [Color.g("<<"), tag]
-        if (typeof message == 'string') {
-
-            switch (tag[0]) {
-                case '!':
-                    let ts = parseInt(tag.slice(1))
-                    this.timeSkew = Date.now() - ts
-                    break;
-
-                case 's':
-                    const params: any[] = JSON.parse(message);
-                    this.handleServerMessage(params.shift() as any, params);
-                    break;
-
-                default:
-                    if (commandTagHandlers.has(tag)) {
-                        logs.push(Color.g('(resolved)'))
-                        const handle = commandTagHandlers.get(tag)
-                        commandTagHandlers.delete(tag)
-                        handle.resolve(message ? JSON.parse(message) : message)
-                    } else {
-                        logs.push(Color.r('(unhandled)'), message)
-                    }
-                    break;
-            }
-        } else {
-            logs.push(Color.b('(Binary)'))
-            this.decrypt(message)
-        }
-        L.apply(undefined, logs)
-    }
-
-    private decrypt(data: Buffer) {
-        if (!this.config.aesKey) {
-            throw new Error("GotBuffer but no key to decrypt")
-        }
-        if (!this.config.macKey) {
-            throw new Error("no hmac key to verify")
-        }
-        const hmac = createHmac('sha256', this.config.macKey).update(data.slice(32)).digest()
-
-        if (hmac.compare(data.slice(0, 32)) !== 0) {
-            throw new Error('Hmac Miss Match');
-        }
-        return AESDecrypt(this.config.aesKey, data.slice(32, 32 + 16), data.slice(32 + 16))
-    }
-
-    /** 32 byte HMAC + Buffer */
-    private encrypt(data: Buffer) {
-        // Encrypt first, then sign
-        data = AESEncrypt(this.config.aesKey, data)
-        const hmac = createHmac('sha256', this.config.macKey).update(data).digest()
-        return Buffer.concat([hmac, data])
-    }
-
     sendCmd<T = any>(scope: WhatsAppCmdType, cmd: WhatsAppCmdAction, ...args: Array<string | boolean | any[]>) {
-        return this.ws.send<T>(JSON.stringify(
-            [scope, cmd, ...args]
-        ))
+        return this.ws.sendCmd<T>(scope, cmd, ...args)
     }
+
     sendBin<T = any>(cmd: string, attr: any, data?: any) {
-        const message = this.encrypt(Buffer.from(JSON.stringify([cmd, attr, data]), 'ascii'))
-        return this.ws.send(message)
+        return this.ws.send(Buffer.from(JSON.stringify([cmd, attr, data]), 'ascii'))
     }
+
     private handleServerMessage(cmd: WhatsAppServerMsg, params: any[]) {
         switch (cmd) {
             case 'Stream':

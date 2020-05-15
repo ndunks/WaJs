@@ -25,9 +25,15 @@ wa.connect().then(
 wa.on('disconnect', (kind) => {
     L('::disconnect', kind)
 })
+
 wa.on('replaced', () => {
     L('::replaced Login in another web whatsapp')
 })
+
+wa.on('timeskew', (ts) => {
+    L('::timeskew', ts)
+})
+
 wa.on('close', (code, reason) => {
     L('::close')
 })

@@ -8,6 +8,29 @@ export function generateKeyPair() {
     return { secretKey, privateKey, publicKey }
 }
 
+export function hmacDecrypt(aesKey:Buffer, macKey: Buffer, data: Buffer) {
+    if (!aesKey) {
+        throw new Error("GotBuffer but no key to decrypt")
+    }
+    if (!macKey) {
+        throw new Error("no hmac key to verify")
+    }
+    const hmac = crypto.createHmac('sha256', macKey).update(data.slice(32)).digest()
+
+    if (hmac.compare(data.slice(0, 32)) !== 0) {
+        throw new Error('Hmac Miss Match');
+    }
+    return AESDecrypt(aesKey, data.slice(32, 32 + 16), data.slice(32 + 16))
+}
+
+/** 32 byte HMAC + Buffer */
+export function hmacEncrypt(aesKey:Buffer, macKey: Buffer, data: Buffer) {
+    // Encrypt first, then sign
+    data = AESEncrypt(aesKey, data)
+    const hmac = crypto.createHmac('sha256', macKey).update(data).digest()
+    return Buffer.concat([hmac, data])
+}
+
 export function AESEncrypt(key: Buffer, data: Buffer) {
     // Create IV
     const iv = crypto.randomBytes(16);
@@ -61,19 +84,17 @@ export function decryptEncryptionKeys(secret: Buffer, privateKey: Buffer) {
     if (hmacValidation.compare(secret.slice(32, 64)) !== 0) {
         throw new Error('Encryption keys invalid');
     }
-    //sharedSecretExpanded.length - 64  + serverSecret.length - 64
+
     const keysEncrypted = Buffer.concat([
         sharedSecretExpanded.slice(64),
         secret.slice(64)
     ])
-    L('keysEncrypted', keysEncrypted.length, keysEncrypted)
+
     let keysDecrypted = AESDecrypt(
         sharedSecretExpanded.slice(0, 32),
         keysEncrypted.slice(0, 16),
         keysEncrypted.slice(16)
     )
-    L('keysDecrypted', keysDecrypted.length, keysDecrypted)
-
     return {
         aesKey: keysDecrypted.slice(0, 32),
         macKey: keysDecrypted.slice(32, 64)
