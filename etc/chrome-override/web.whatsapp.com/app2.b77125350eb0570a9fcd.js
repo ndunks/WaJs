@@ -7466,6 +7466,7 @@
         }),
         t.default = function(e) {
             var t = e.shift();
+            console.log('HANDLE',t)
             if (Array.isArray(t)) {
                 var a = []
                   , n = []
@@ -29297,7 +29298,8 @@
                 return n
             },
             handleResponse: function(e, t, a, n) {
-                if (0 === e.indexOf("preempt"))
+                if (0 === e.indexOf("preempt")){
+                    console.log('handleResponse preempt', t)
                     switch (this.N.attr("type", t)) {
                     case "chat":
                         LOG(2)(Pe(), e);
@@ -29335,6 +29337,7 @@
                     default:
                         LOG(4)(Me(), this.N.toString(t, !0))
                     }
+                }
                 else
                     LOG(4)(Ce(), this.N.toString(t, !0))
             },
