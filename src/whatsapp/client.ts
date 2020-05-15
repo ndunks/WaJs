@@ -14,6 +14,12 @@ export default class Client {
     /** Compactible Web WhatsApp Version */
     version = '2.2019.6'
 
+    /** Proto version when this  */
+    protoVersion = [0, 17]
+
+    /** Binary protocol version */
+    binVersion = 10
+
     /** Stored Session info */
     config: WhatsAppClientConfig
 
@@ -99,7 +105,10 @@ export default class Client {
 
     private loginRestore(ref: string, ttl: number) {
         return new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
-            this.onReady = (info, err) => err ? reject(err) : resolve(info)
+            this.onReady = (info, err) => {
+                this.onReady = null
+                err ? reject(err) : resolve(info)
+            }
             this.sendCmd('admin', 'login',
                 this.config.tokens.client,
                 this.config.tokens.server,
@@ -113,7 +122,12 @@ export default class Client {
                     case 401:
                         return reject('Unpaired from the phone')
                     case 403:
-                        return reject('Access denied, check tos field in the JSON: if it equals or greater than 2, you have violated TOS')
+                        if (response.tos) {
+                            return reject(`Access denied. TOS: ${response.tos} ` +
+                                `${response.tos >= 2 ? 'YOU HAVE VIOLATED TOS!' : ''}`)
+                        } else {
+                            return reject('Access denied')
+                        }
                     case 405:
                         return reject('Already logged in')
                     case 409:
@@ -130,10 +144,11 @@ export default class Client {
             // Wait Conn message from server
             this.onReady = (info, err) => {
                 clearTimeout(timer);
+                this.onReady = null;
                 (err ? reject(err) : resolve(info))
             }
             const checker = () => {
-                L('Refreshing QR Code..')
+                console.log('Refreshing QR Code..')
                 this.sendCmd<CmdInitResponse>('admin', 'Conn', 'reref').then(
                     response => {
                         switch (response.status) {
@@ -145,6 +160,7 @@ export default class Client {
                                 timer = setTimeout(checker, ttl)
                                 break;
                             case 304:
+                                L('Not yet..')
                                 timer = setTimeout(checker, 3000)
                                 break;
                             default:
@@ -156,7 +172,7 @@ export default class Client {
                 ).catch(reject)
             }
 
-            L('Please Login..')
+            console.log('Please Login..')
             this.generateQRCode(ref)
             timer = setTimeout(checker, ttl)
         })
@@ -173,6 +189,9 @@ export default class Client {
     }
 
     private handleWhatsAppConn(info: WhatsAppServerMsgConn) {
+        if (!this.onReady) {
+            return L('Got Conn but no handler, ignore it', info)
+        }
         // On restored session is not contain secret
         if (info.secret) {
             L('handleWhatsAppConn: decrypt secret');
@@ -183,6 +202,7 @@ export default class Client {
         } else {
             L('handleWhatsAppConn: no secret, its resumed.');
         }
+
         if (!this.config.aesKey) {
             return this.onReady(null, 'No Encryptions Keys!')
         }
@@ -279,6 +299,8 @@ export default class Client {
                 return;
             case 'Cmd':
                 const args = params[0] as WhatsAppServerMsgCmd
+                this.event.emit(args.type || 'cmd', ...params)
+                L('Got CMD', args)
                 if (this.serverCmdHandlers[args.type]) {
                     this.serverCmdHandlers[args.type](args)
                 } else {
@@ -295,6 +317,7 @@ export default class Client {
                 break;
         }
     }
+    /** Internal command handler */
     private serverCmdHandlers = {
         challenge: (args: WhatsAppServerMsgCmdChallenge) => {
             L('Handling challenge');

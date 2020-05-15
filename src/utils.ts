@@ -4,8 +4,7 @@ import { WhatsAppClientConfig } from "./whatsapp/interfaces"
 function configLoad(file: string) {
     const cfg: WhatsAppClientConfig = {} as any
 
-    const obj = JSON.parse(readFileSync(file, 'utf8'))
-    Object.assign(cfg, obj)
+    const obj = Object.assign(cfg, JSON.parse(readFileSync(file, 'utf8')))
     cfg.serverSecret = Buffer.from(obj.serverSecret, 'base64')
     cfg.aesKey = Buffer.from(obj.aesKey, 'base64')
     cfg.macKey = Buffer.from(obj.macKey, 'base64')
@@ -14,6 +13,7 @@ function configLoad(file: string) {
     )
     return cfg
 }
+
 function configStore(file: string, cfg: WhatsAppClientConfig) {
     const obj: any = Object.assign({}, cfg)
     obj.serverSecret = cfg.serverSecret.toString('base64')

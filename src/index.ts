@@ -16,3 +16,6 @@ wa.connect().then(
         console.log('Connected to whatsapp:', info.pushname, info.phone);
     }
 ).catch(err => console.error(err))
+wa.on('disconnect', function () {
+    L('GOT DISCONNECT', arguments)
+})
