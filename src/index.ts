@@ -22,6 +22,12 @@ wa.connect().then(
     }
 ).catch(err => console.error(err))
 
-wa.on('replaced', function () {
-    L('Login in another web whatsapp')
+wa.on('disconnect', (kind) => {
+    L('::disconnect', kind == )
+})
+wa.on('replaced', () => {
+    L('::replaced Login in another web whatsapp')
+})
+wa.on('close', (code, reason) => {
+    L('::close')
 })

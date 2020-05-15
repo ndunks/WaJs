@@ -1,13 +1,7 @@
 import Client from "./client";
 import { EventEmitter } from "events";
 
-/**
- * Event:
- *  `disconnect` -> its server command, have kind param,
- *                  if kind 'replaced' then replaced event also emitted
- *  `replaced`   -> Login in another web.whatsapp
- */
-export default class WhatsApp extends EventEmitter {
+class WhatsApp extends EventEmitter {
     client: Client
     private keepAliveTimer: NodeJS.Timeout
 
@@ -49,3 +43,20 @@ export default class WhatsApp extends EventEmitter {
         this.client.close()
     }
 }
+
+declare interface WhatsApp extends NodeJS.EventEmitter {
+    /**
+     * its server command, have kind param,
+     * if kind 'replaced' then replaced event also emitted
+     */
+    on(event: 'disconnect', listener: (kind: 'replaced') => void): this;
+    /** Login in another web.whatsapp */
+    on(event: 'replaced', listener: () => void): this;
+    /** WebSocker error */
+    on(event: 'error', listener: (this: WebSocket, err: Error) => void): this;
+    /** WebSocket Closed */
+    on(event: 'close', listener: (this: WebSocket, code: number, reason: string) => void): this;
+
+}
+
+export default WhatsApp

@@ -1,7 +1,10 @@
 import WebSocket from "ws";
 import { randomBytes, createHmac } from "crypto";
 import { arch, platform } from "os";
-import { CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg, WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig } from "./interfaces";
+import {
+    CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg,
+    WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig
+} from "./interfaces";
 import * as fs from 'fs'
 import { configLoad, configStore } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys, AESDecrypt, AESEncrypt } from "./secure";
@@ -60,7 +63,6 @@ export default class Client {
                 const onOpen = () => {
                     // Swap error listener
                     this.ws.removeListener("error", reject)
-                    this.ws.on('error', this.onError)
                     // INIT
                     this.sendCmd<CmdInitResponse>('admin', 'init',
                         this.version.split('.').map(v => parseInt(v)),
@@ -93,11 +95,12 @@ export default class Client {
                     }).then(resolve).catch(reject)
                 }
 
+                this.ws.on('error', (e) => this.event.emit('error', e))
+                this.ws.on('close', (...args) => this.event.emit('close', ...args))
                 // Fail on early error
                 this.ws.once("error", reject)
                 this.ws.once("open", onOpen)
                 this.ws.on("message", this.onMessage)
-                this.ws.on("close", this.onClose)
             }
         )
     }
@@ -172,15 +175,13 @@ export default class Client {
             throw new Error("no hmac key to verify")
         }
         const hmac = createHmac('sha256', this.config.macKey).update(data.slice(32)).digest()
-        const hmacServer = data.slice(0, 32)
-        if (hmac.compare(hmacServer) !== 0) {
-            L('HMAC gen', hmac)
-            L('HMAC srv', hmacServer)
-            L('HMAC ===', hmac.compare(hmacServer))
+
+        if (hmac.compare(data.slice(0, 32)) !== 0) {
             throw new Error('Hmac Miss Match');
         }
         return AESDecrypt(this.config.aesKey, data.slice(32, 32 + 16), data.slice(32 + 16))
     }
+
     /** 32 byte HMAC + Buffer */
     private encrypt(data: Buffer) {
         // Encrypt first, then sign
@@ -189,12 +190,6 @@ export default class Client {
         return Buffer.concat([hmac, data])
     }
 
-    private onClose = (code: Number, message: String) => {
-        L("CLOSED!", code, message);
-    }
-    private onError = (error: Error) => {
-        console.error("ERR!", error);
-    }
     send<T = any>(message: Buffer | string) {
         return new Promise<T>(
             (resolve, reject) => {
@@ -225,13 +220,17 @@ export default class Client {
             case 'Stream':
                 // Ignore
                 return;
+            case 'Props':
+                return this.event.emit('props', params[0])
+            case 'Blocklist':
+                return this.event.emit('blocklist', params[0])
+                return;
             case 'Cmd':
                 const args = params[0] as WhatsAppServerMsgCmd
-                this.event.emit(args.type || 'cmd', ...params)
                 if (this.serverCmdHandlers[args.type]) {
                     this.serverCmdHandlers[args.type](args)
                 } else {
-                    L('handleServerMessage: unhandled cmd.', cmd, args)
+                    L('handleServerMessage: UNHANDLED CMD.', cmd, args)
                 }
                 break;
             case 'Conn':
@@ -240,13 +239,14 @@ export default class Client {
                 break;
             default:
                 this.serverData[cmd] = params[0]
-                L('handleServerMessage: ignored', cmd, params.constructor.name)
+                L('handleServerMessage:', cmd, params)
                 break;
         }
     }
     /** Internal command handler */
     private serverCmdHandlers = {
         disconnect: (args) => {
+            this.event.emit('disconnect', args.kind)
             if (args.kind == 'replaced') {
                 this.event.emit('replaced')
             }
