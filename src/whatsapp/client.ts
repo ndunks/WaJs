@@ -5,6 +5,7 @@ import { CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg,
 import * as fs from 'fs'
 import { configLoad, configStore } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys, AESDecrypt } from "./secure";
+import { EventEmitter } from "events";
 
 export default class Client {
     /** This app name */
@@ -26,10 +27,14 @@ export default class Client {
 
     private messageConter: number = 0
     private startTime: string;
-    private cmdStack = new Map<String, { message: String, resolve: Function, reject: Function }>()
+    private cmdStack = new Map<String, { message: String | Buffer, resolve: Function, reject: Function }>()
     private onReady: (info: WhatsAppServerMsgConn, err?: string) => void
+    /** Handle WS message start with s */
+    private onServerMessage: (cmd: WhatsAppServerMsg, params: any[]) => void
+    /** Handle server message that type is cmd */
+    private onServerMessageCommand: (info: WhatsAppServerMsgConn, err?: string) => void
 
-    constructor(private authFile = '.auth') {
+    constructor(private authFile = '.auth', private event: EventEmitter) {
         if (fs.existsSync(authFile)) {
             this.config = configLoad(this.authFile)
         } else {
@@ -232,6 +237,10 @@ export default class Client {
         }
         return AESDecrypt(this.config.aesKey, data.slice(32, 32 + 16), data.slice(32 + 16))
     }
+    private encrypt(data: Buffer) {
+        E("NOT IMPLEMENTED ENCRYPT");
+        return data
+    }
 
     private onClose = (code: Number, message: String) => {
         L("CLOSED!", code, message);
@@ -239,21 +248,30 @@ export default class Client {
     private onError = (error: Error) => {
         console.error("ERR!", error);
     }
-
-    sendCmd<T = any>(scope: WhatsAppCmdType, cmd: WhatsAppCmdAction, ...args: Array<string | boolean | any[]>): Promise<T> {
-        return new Promise(
+    send<T = any>(message: Buffer | string) {
+        return new Promise<T>(
             (resolve, reject) => {
                 const tag = `${this.startTime}.${this.messageConter++}`
-                const message = `${tag},${JSON.stringify(
-                    [scope, cmd, ...args]
-                )}`
-                //L('SEND', message);
+                if (typeof message == 'string') {
+                    message = `${tag},${message}`
+                } else {
+                    // encrypt
+                    message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), this.encrypt(message)])
+                }
                 this.cmdStack.set(tag, { message, resolve, reject })
                 this.ws.send(message)
             }
         )
     }
 
+    sendCmd<T = any>(scope: WhatsAppCmdType, cmd: WhatsAppCmdAction, ...args: Array<string | boolean | any[]>) {
+        return this.send<T>(JSON.stringify(
+            [scope, cmd, ...args]
+        ))
+    }
+    sendBin<T = any>(cmd: string, attr: any, data?: any) {
+
+    }
     private handleServerMessage(cmd: WhatsAppServerMsg, params: any[]) {
         switch (cmd) {
             case 'Stream':
@@ -273,7 +291,7 @@ export default class Client {
                 break;
             default:
                 this.serverData[cmd] = params[0]
-                L('handleServerMessage: ignored', cmd, params)
+                L('handleServerMessage: ignored', cmd, params.constructor.name)
                 break;
         }
     }
@@ -294,18 +312,9 @@ export default class Client {
         const sign = createHmac('sha256', this.config.macKey).update(data).digest()
         return Buffer.concat([sign, data])
     }
-
-    state() {
-
-    }
     close() {
-        try {
-            this.ws.send('goodbye,,["admin","Conn","disconnect"]')
-        } catch{ }
-        finally {
-            if (this.ws && this.ws.readyState == this.ws.OPEN) {
-                this.ws.close()
-            }
+        if (this.ws && this.ws.readyState == this.ws.OPEN) {
+            this.ws.close()
         }
     }
 }

@@ -13,6 +13,6 @@ global.E = console.error
 const wa = new WhatsApp();
 wa.connect().then(
     info => {
-        console.log('Connected to whatsapp');
+        console.log('Connected to whatsapp:', info.pushname, info.phone);
     }
 ).catch(err => console.error(err))
