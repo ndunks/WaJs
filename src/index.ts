@@ -1,4 +1,4 @@
-import WhatsAppClient from "./whatsapp/client";
+import WhatsApp from "./whatsapp";
 
 declare global {
     var L: typeof console.log;
@@ -10,10 +10,9 @@ global.L = console.log
 ///@ts-ignore
 global.E = console.error
 
-const client = new WhatsAppClient();
-client.connect().then(
-    ws => {
+const wa = new WhatsApp();
+wa.connect().then(
+    info => {
         console.log('Connected to whatsapp');
-
     }
 ).catch(err => console.error(err))

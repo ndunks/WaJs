@@ -6,7 +6,7 @@ import * as fs from 'fs'
 import { configLoad, configStore } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys, AESDecrypt } from "./secure";
 
-export default class WhatsAppClient {
+export default class Client {
     /** This app name */
     clientName = 'WaJs'
 
@@ -42,7 +42,7 @@ export default class WhatsAppClient {
     }
 
     connect() {
-        return new Promise(
+        return new Promise<WhatsAppServerMsgConn>(
             (resolve, reject) => {
                 this.startTime = new Date().getTime().toString(36)
                 this.ws = new WebSocket("wss://web.whatsapp.com/ws", {
@@ -61,28 +61,25 @@ export default class WhatsAppClient {
                     ).then(response => {
                         if (response.status != 200) {
                             L(response)
-                            return reject('Init error: ' + response.status)
-                        }
-                        if (!response || !response.ref) {
+                            reject('Init error: ' + response.status)
+                        } else if (!response || !response.ref) {
                             L(response)
-                            return reject('No server id')
+                            reject('No server id')
+                        } else {
+                            const ttl = response.ttl || 20000
+                            // Has stored session? restore it.
+                            return this.config.tokens ?
+                                this.loginRestore(response.ref, ttl)
+                                    .catch(err => {
+                                        E('loginRestore:', err)
+                                        if (fs.existsSync(this.authFile)) {
+                                            L('Deleting expired config');
+                                            fs.unlinkSync(this.authFile)
+                                        }
+                                        return this.loginQRCode(response.ref, ttl)
+                                    }) :
+                                this.loginQRCode(response.ref, ttl)
                         }
-                        const ttl = response.ttl || 20000
-                        // Has stored session? restore it.
-                        if (this.config.tokens) {
-                            return this.loginRestore(response.ref, ttl)
-                                .then(res => L('loginRestore: OK'))
-                                .catch(err => {
-                                    E('loginRestore:', err)
-                                    if (fs.existsSync(this.authFile)) {
-                                        L('Deleting expired config');
-                                        //fs.unlinkSync(this.authFile)
-                                    }
-                                    return this.loginQRCode(response.ref, ttl)
-                                })
-                        }
-                        return this.loginQRCode(response.ref, ttl)
-
                     }).then(resolve).catch(reject)
                 }
 
@@ -96,7 +93,7 @@ export default class WhatsAppClient {
     }
 
     private loginRestore(ref: string, ttl: number) {
-        return new Promise((resolve, reject) => {
+        return new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
             this.onReady = (info, err) => err ? reject(err) : resolve(info)
             this.sendCmd('admin', 'login',
                 this.config.tokens.client,
@@ -107,7 +104,7 @@ export default class WhatsAppClient {
                 L('restoreSession:', response);
                 switch (response.status) {
                     case 200:
-                        return resolve(response)//must received Conn, nothing todo here
+                        return response//must received Conn, nothing todo here
                     case 401:
                         return reject('Unpaired from the phone')
                     case 403:
@@ -124,7 +121,7 @@ export default class WhatsAppClient {
     }
     private loginQRCode(ref: string, ttl: number) {
         let timer;
-        return new Promise((resolve, reject) => {
+        return new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
             // Wait Conn message from server
             this.onReady = (info, err) => {
                 clearTimeout(timer);
@@ -234,11 +231,6 @@ export default class WhatsAppClient {
             throw new Error('Hmac Miss Match');
         }
         return AESDecrypt(this.config.aesKey, data.slice(32, 32 + 16), data.slice(32 + 16))
-        // const cipher = createDecipheriv('aes-256-cbc', this.config.aesKey, data.slice(32, 32 + 16))
-        // let decs = [cipher.update(data.slice(32 + 16))]
-        // decs.push(cipher.final())
-        // cipher.destroy()
-        // return Buffer.concat(decs)
     }
 
     private onClose = (code: Number, message: String) => {
@@ -255,7 +247,7 @@ export default class WhatsAppClient {
                 const message = `${tag},${JSON.stringify(
                     [scope, cmd, ...args]
                 )}`
-                L('SEND', message);
+                //L('SEND', message);
                 this.cmdStack.set(tag, { message, resolve, reject })
                 this.ws.send(message)
             }
