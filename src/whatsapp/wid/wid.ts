@@ -34,12 +34,8 @@ export default class Wid {
     device: number
     _serialized: string
 
-    constructor(str: string, private n) {
-        // if ((0,
-        //     i.logRawFreeze)(this, e),
-        //     !(n && n.intentionallyUsePrivateConstructor))
-        //     throw new Error("You should use WidFactory.createWid() instead of the Wid constructor. If you absolutely must use the constructor, pass {intentionallyUsePrivateConstructor: true} as a second parameter.");
-        if (!(n && n.intentionallyUsePrivateConstructor))
+    constructor(str: string, flag) {
+        if (!(flag && flag.intentionallyUsePrivateConstructor))
             throw new Error("You should use WidFactory.createWid() instead of the Wid constructor. If you absolutely must use the constructor, pass {intentionallyUsePrivateConstructor: true} as a second parameter.");
         let match = str.match(regex);
         if (!match)

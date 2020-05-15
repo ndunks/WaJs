@@ -5,7 +5,9 @@ export default class BufferReader {
 
     constructor(public buf: BinaryBuffer) {
     }
-
+    get index() {
+        return this.buf._readIndex
+    }
     readByte() {
         return this.buf.readUint8()
     }

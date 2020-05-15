@@ -10,7 +10,7 @@ function tryMakeWid(str: string) {
     try {
         return WidFactory.createWid(str)
     } catch (e) {
-        L('reader: createWid FAIL', e);
+        E('reader: createWid FAIL', e);
         return str
     }
 }
@@ -79,9 +79,9 @@ export default class BinaryReader {
     readList(buf: BufferReader, byteTag: BinaryTag) {
         let list = []
         let size = this.readListSize(buf, byteTag)
-        L('reader: readList', size);
+        //L('reader: readList', size);
         for (let i = 0; i < size; i++) {
-            L('reader: readList', i)
+            //L('reader: readList', i)
             list.push(this.readNode(buf));
         }
         return list
@@ -167,14 +167,14 @@ export default class BinaryReader {
         let attrSize = listSize - 2 + listSize % 2 >> 1;
         let attr: { [key: string]: string } = this.readAttributes(buf, attrSize);
         if (listSize % 2 == 1) {
-            L('reader: readNode', tag, 'NO DATA', BinaryTag[byteTag]);
+            //L('reader: readNode', tag, 'NO DATA', BinaryTag[byteTag]);
             return { tag, attr }
         }
 
         let data;
 
         byteTag = buf.readByte()
-        L('reader: readNode', tag, 'Data', BinaryTag[byteTag]);
+        //L(`reader: readNode[${buf.index}]`, tag, 'Data', byteTag, BinaryTag[byteTag]);
         if (this.isListTag(byteTag)) {
             data = this.readList(buf, byteTag);
         } else if (byteTag === BinaryTag.BINARY_8) {
@@ -193,11 +193,14 @@ export default class BinaryReader {
     isListTag(tag: number) {
         return tag === BinaryTag.LIST_EMPTY || tag === BinaryTag.LIST_8 || tag === BinaryTag.LIST_16
     }
-    readAttributes(buf: BufferReader, len: number) {
+    readAttributes(buf: BufferReader, len: number): { [key: string]: string } {
+
+        if (!len) return undefined
+
         this.READING_ATTR_FLAG = true
+        //L("Read Attr", len)
 
         let result = {}
-
         for (let idx = 0; idx < len; idx++) {
             let key = this.readString(buf, buf.readByte())
             this.CURRENT_ATTR_KEY = key
@@ -206,6 +209,7 @@ export default class BinaryReader {
         }
 
         this.READING_ATTR_FLAG = false
+        L(result)
         return result
     }
 }
