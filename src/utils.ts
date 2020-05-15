@@ -2,9 +2,8 @@ import { readFileSync, writeFileSync } from "fs";
 import { WhatsAppClientConfig } from "./whatsapp/interfaces"
 
 function configLoad(file: string) {
-    const cfg: WhatsAppClientConfig = {} as any
-
-    const obj = Object.assign(cfg, JSON.parse(readFileSync(file, 'utf8')))
+    const obj = JSON.parse(readFileSync(file, 'utf8'))
+    const cfg: WhatsAppClientConfig = Object.assign({}, obj)
     cfg.serverSecret = Buffer.from(obj.serverSecret, 'base64')
     cfg.aesKey = Buffer.from(obj.aesKey, 'base64')
     cfg.macKey = Buffer.from(obj.macKey, 'base64')
