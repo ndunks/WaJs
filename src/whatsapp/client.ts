@@ -4,7 +4,7 @@ import { arch, platform } from "os";
 import { CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg, WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig } from "./interfaces";
 import * as fs from 'fs'
 import { configLoad, configStore } from "../utils";
-import { generateKeyPair, decryptEncryptionKeys, AESDecrypt } from "./secure";
+import { generateKeyPair, decryptEncryptionKeys, AESDecrypt, AESEncrypt } from "./secure";
 import { EventEmitter } from "events";
 
 export default class Client {
@@ -14,7 +14,7 @@ export default class Client {
     /** Compactible Web WhatsApp Version */
     version = '2.2019.6'
 
-    /** Proto version when this  */
+    /** Proto version when this created */
     protoVersion = [0, 17]
 
     /** Binary protocol version */
@@ -257,9 +257,12 @@ export default class Client {
         }
         return AESDecrypt(this.config.aesKey, data.slice(32, 32 + 16), data.slice(32 + 16))
     }
+    /** 32 byte HMAC + Buffer */
     private encrypt(data: Buffer) {
-        E("NOT IMPLEMENTED ENCRYPT");
-        return data
+        // Encrypt first, then sign
+        data = AESEncrypt(this.config.aesKey, data)
+        const hmac = createHmac('sha256', this.config.macKey).update(data).digest()
+        return Buffer.concat([hmac, data])
     }
 
     private onClose = (code: Number, message: String) => {
@@ -275,8 +278,8 @@ export default class Client {
                 if (typeof message == 'string') {
                     message = `${tag},${message}`
                 } else {
-                    // encrypt
-                    message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), this.encrypt(message)])
+                    // encrypted
+                    message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
                 }
                 this.cmdStack.set(tag, { message, resolve, reject })
                 this.ws.send(message)
@@ -290,7 +293,8 @@ export default class Client {
         ))
     }
     sendBin<T = any>(cmd: string, attr: any, data?: any) {
-
+        const message = this.encrypt(Buffer.from(JSON.stringify([cmd, attr, data]), 'ascii'))
+        return this.send(message)
     }
     private handleServerMessage(cmd: WhatsAppServerMsg, params: any[]) {
         switch (cmd) {

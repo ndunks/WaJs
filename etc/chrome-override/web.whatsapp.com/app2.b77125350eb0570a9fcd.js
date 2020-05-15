@@ -60284,11 +60284,11 @@
         }(u.PureComponent);
         t.default = f
     },
-    ddcchcchag: function(e, t, a) {
+    Crypto: function(e, t, a) {
         "use strict";
         var n = a("bfejgijfbh")
           , i = a("cfjecfhbfg")
-          , r = a("dhgjbgdbhg")
+          , r = a("CryptoHelper")
           , o = a("ddjgcfjicj")
           , s = i(a("ecjehifjdd"))
           , d = i(a("cahfddcdga"))
@@ -60297,11 +60297,12 @@
             encrypt: function(e) {
                 if (!e)
                     throw new Error("Missing ArrayBuffer in cryptoAsync:encrypt");
-                var t = c.get()
-                  , a = (0,
-                r.encryptAndMac)((0,
-                d.default)(t.encKey), (0,
-                d.default)(t.macKey), e);
+                let t = c.get()
+                let a = r.encryptAndMac(
+                    d.default(t.encKey),
+                    d.default(t.macKey),
+                    e
+                );
                 return this._encryptQueue.enqueue(a)
             },
             decrypt: function(e) {
@@ -73734,7 +73735,7 @@
         };
         e.exports = _
     },
-    dhgjbgdbhg: function(e, t, a) {
+    CryptoHelper: function(e, t, a) {
         "use strict";
         var n = a("cfjecfhbfg");
         Object.defineProperty(t, "__esModule", {
@@ -80129,7 +80130,7 @@
           , c = n(a("dgcdacjddi"))
           , u = a("eaiigfgagg")
           , l = n(a("djhfjffeaj"))
-          , f = a("dhgjbgdbhg")
+          , f = a("CryptoHelper")
           , h = n(a("gchhabjba"))
           , p = n(a("bbejegbieb"))
           , g = n(a("cjieghfgda"));
@@ -80799,7 +80800,7 @@
             InputStream: l.default,
             Reader: a("chaebfegeh"),
             Dictionary: a("dabcaghhah"),
-            Crypto: a("ddcchcchag")
+            Crypto: a("Crypto")
         }
           , v = m({
             Dictionary: a("cbhhieidga")

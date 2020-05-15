@@ -1,6 +1,10 @@
 import Client from "./client";
 import { EventEmitter } from "events";
 
+/**
+ * Event:
+ *  `disconnect` -> its server command
+ */
 export default class WhatsApp extends EventEmitter {
     client: Client
     private keepAliveTimer: NodeJS.Timeout
@@ -31,8 +35,9 @@ export default class WhatsApp extends EventEmitter {
     }
 
     getContacts() {
-        const msg = ["query", { type: "contacts", epoch: "1" }, undefined]
+        return this.client.sendBin("query", { type: "contacts", epoch: "1" })
     }
+
     state() {
 
     }

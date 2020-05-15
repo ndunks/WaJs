@@ -8,9 +8,17 @@ export function generateKeyPair() {
     return { secretKey, privateKey, publicKey }
 }
 
+export function AESEncrypt(key: Buffer, data: Buffer) {
+    // Create IV
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
+    const bufs = [cipher.update(data), cipher.final()]
+    return Buffer.concat(bufs)
+}
+
 export function AESDecrypt(key: Buffer, iv: Buffer, encrypted: Buffer) {
     const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv)
-    let bufs = [decipher.update(encrypted), decipher.final()]
+    const bufs = [decipher.update(encrypted), decipher.final()]
     return Buffer.concat(bufs)
 }
 
