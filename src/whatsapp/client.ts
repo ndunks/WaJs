@@ -6,7 +6,7 @@ import {
     WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig
 } from "./interfaces";
 import * as fs from 'fs'
-import { configLoad, configStore } from "../utils";
+import { configLoad, configStore, Color } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys, AESDecrypt, AESEncrypt } from "./secure";
 import { EventEmitter } from "events";
 import authRestoreTakeOver from "./auth/restore-takeover";
@@ -37,7 +37,6 @@ export default class Client {
     timeSkew: number
 
     private messageConter: number = 0
-    private startTime: string;
     private cmdStack = new Map<String, { message: String | Buffer, resolve: Function, reject: Function }>()
     protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void
 
@@ -56,7 +55,7 @@ export default class Client {
     connect() {
         return new Promise<WhatsAppServerMsgConn>(
             (resolve, reject) => {
-                this.startTime = new Date().getTime().toString(36)
+
                 this.ws = new WebSocket("wss://web.whatsapp.com/ws", {
                     origin: "https://web.whatsapp.com",
                 })
@@ -139,32 +138,37 @@ export default class Client {
         const firstCommaPos = data.indexOf(',');
         const tag = data.slice(0, firstCommaPos).toString('ascii')
         const message: string | Buffer = data.slice(firstCommaPos + 1)
+        let logs = [Color.g("<<"), tag]
         if (typeof message == 'string') {
+
             switch (tag[0]) {
                 case '!':
                     let ts = parseInt(tag.slice(1))
                     this.timeSkew = Date.now() - ts
                     break;
+
                 case 's':
-                    //server message
                     const params: any[] = JSON.parse(message);
                     this.handleServerMessage(params.shift() as any, params);
                     break;
 
                 default:
                     if (this.cmdStack.has(tag)) {
+                        logs.push(Color.g('(resolved)'))
                         const handle = this.cmdStack.get(tag)
                         this.cmdStack.delete(tag)
-                        const param = message ? JSON.parse(message) : null
-                        handle.resolve(param)
+                        handle.resolve(message ? JSON.parse(message) : message)
                     } else {
-                        L('Unhandled CMD Response', tag, message)
+                        logs.push(Color.r('(unhandled)'), message)
                     }
                     break;
             }
         } else {
+            logs.push(Color.b('(Binary)'))
             this.decrypt(message)
         }
+
+        L.apply(undefined, logs)
     }
 
     private decrypt(data: Buffer) {
@@ -193,7 +197,7 @@ export default class Client {
     send<T = any>(message: Buffer | string) {
         return new Promise<T>(
             (resolve, reject) => {
-                const tag = `${this.startTime}.${this.messageConter++}`
+                const tag = `${Date.now()}.${this.messageConter++}`
                 if (typeof message == 'string') {
                     message = `${tag},${message}`
                 } else {
@@ -201,6 +205,7 @@ export default class Client {
                     message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
                 }
                 this.cmdStack.set(tag, { message, resolve, reject })
+                L(Color.y('>>'), tag)
                 this.ws.send(message)
             }
         )
