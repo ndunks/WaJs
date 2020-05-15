@@ -3,7 +3,9 @@ import { EventEmitter } from "events";
 
 /**
  * Event:
- *  `disconnect` -> its server command
+ *  `disconnect` -> its server command, have kind param,
+ *                  if kind 'replaced' then replaced event also emitted
+ *  `replaced`   -> Login in another web.whatsapp
  */
 export default class WhatsApp extends EventEmitter {
     client: Client

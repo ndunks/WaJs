@@ -21,6 +21,7 @@ wa.connect().then(
         )
     }
 ).catch(err => console.error(err))
-wa.on('disconnect', function () {
-    L('GOT DISCONNECT', arguments)
+
+wa.on('replaced', function () {
+    L('Login in another web whatsapp')
 })

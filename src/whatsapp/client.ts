@@ -6,6 +6,7 @@ import * as fs from 'fs'
 import { configLoad, configStore } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys, AESDecrypt, AESEncrypt } from "./secure";
 import { EventEmitter } from "events";
+import authRestoreTakeOver from "./auth/restore-takeover";
 
 export default class Client {
     /** This app name */
@@ -30,15 +31,12 @@ export default class Client {
     } = {};
 
     ws: WebSocket
+    timeSkew: number
 
     private messageConter: number = 0
     private startTime: string;
     private cmdStack = new Map<String, { message: String | Buffer, resolve: Function, reject: Function }>()
-    private onReady: (info: WhatsAppServerMsgConn, err?: string) => void
-    /** Handle WS message start with s */
-    private onServerMessage: (cmd: WhatsAppServerMsg, params: any[]) => void
-    /** Handle server message that type is cmd */
-    private onServerMessageCommand: (info: WhatsAppServerMsgConn, err?: string) => void
+    protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void
 
     constructor(private authFile = '.auth', private event: EventEmitter) {
         if (fs.existsSync(authFile)) {
@@ -78,18 +76,19 @@ export default class Client {
                             reject('No server id')
                         } else {
                             const ttl = response.ttl || 20000
+                            const qrCodeLogin = () => require('./auth/login-qrcode').default.call(this, response.ref, ttl)
                             // Has stored session? restore it.
                             return this.config.tokens ?
-                                this.loginRestore(response.ref, ttl)
+                                authRestoreTakeOver.call(this, response.ref, ttl)
                                     .catch(err => {
                                         E('loginRestore:', err)
                                         if (fs.existsSync(this.authFile)) {
                                             L('Deleting expired config');
                                             fs.unlinkSync(this.authFile)
                                         }
-                                        return this.loginQRCode(response.ref, ttl)
+                                        return qrCodeLogin()
                                     }) :
-                                this.loginQRCode(response.ref, ttl)
+                                qrCodeLogin()
                         }
                     }).then(resolve).catch(reject)
                 }
@@ -101,91 +100,6 @@ export default class Client {
                 this.ws.on("close", this.onClose)
             }
         )
-    }
-
-    private loginRestore(ref: string, ttl: number) {
-        return new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
-            this.onReady = (info, err) => {
-                this.onReady = null
-                err ? reject(err) : resolve(info)
-            }
-            this.sendCmd('admin', 'login',
-                this.config.tokens.client,
-                this.config.tokens.server,
-                this.config.clientId,
-                'takeover'
-            ).then(response => {
-                L('restoreSession:', response);
-                switch (response.status) {
-                    case 200:
-                        return response//must received Conn, nothing todo here
-                    case 401:
-                        return reject('Unpaired from the phone')
-                    case 403:
-                        if (response.tos) {
-                            return reject(`Access denied. TOS: ${response.tos} ` +
-                                `${response.tos >= 2 ? 'YOU HAVE VIOLATED TOS!' : ''}`)
-                        } else {
-                            return reject('Access denied')
-                        }
-                    case 405:
-                        return reject('Already logged in')
-                    case 409:
-                        return reject('Logged in from another location')
-                    default:
-                        return reject('Unhandled restore response: ' + response.status)
-                }
-            })
-        })
-    }
-    private loginQRCode(ref: string, ttl: number) {
-        let timer;
-        return new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
-            // Wait Conn message from server
-            this.onReady = (info, err) => {
-                clearTimeout(timer);
-                this.onReady = null;
-                (err ? reject(err) : resolve(info))
-            }
-            const checker = () => {
-                console.log('Refreshing QR Code..')
-                this.sendCmd<CmdInitResponse>('admin', 'Conn', 'reref').then(
-                    response => {
-                        switch (response.status) {
-                            case 429:
-                                reject('QRCode timeout')
-                                break
-                            case 200:
-                                this.generateQRCode(response.ref)
-                                timer = setTimeout(checker, ttl)
-                                break;
-                            case 304:
-                                L('Not yet..')
-                                timer = setTimeout(checker, 3000)
-                                break;
-                            default:
-                                L('QRCode ref Unknown', response)
-                                reject('QRCode ref Unknown')
-                                break
-                        }
-                    }
-                ).catch(reject)
-            }
-
-            console.log('Please Login..')
-            this.generateQRCode(ref)
-            timer = setTimeout(checker, ttl)
-        })
-    }
-
-    private generateQRCode(serverId: string) {
-        const qrContent = [
-            serverId,
-            this.config.keys.publicKey.toString('base64'),
-            this.config.clientId
-        ].join(',')
-        L('QRCode', qrContent);
-        require('qrcode-terminal').generate(qrContent, { small: true })
     }
 
     private handleWhatsAppConn(info: WhatsAppServerMsgConn) {
@@ -223,17 +137,27 @@ export default class Client {
         const tag = data.slice(0, firstCommaPos).toString('ascii')
         const message: string | Buffer = data.slice(firstCommaPos + 1)
         if (typeof message == 'string') {
-            //L('GotString', data);
-            if (tag[0] == 's') {
-                //server message
-                const params: any[] = JSON.parse(message);
-                this.handleServerMessage(params.shift() as any, params);
-            } else if (this.cmdStack.has(tag)) {
-                const handle = this.cmdStack.get(tag)
-                this.cmdStack.delete(tag)
-                handle.resolve(JSON.parse(message))
-            } else {
-                L('Unhandled CMD Response', tag, message)
+            switch (tag[0]) {
+                case '!':
+                    let ts = parseInt(tag.slice(1))
+                    this.timeSkew = Date.now() - ts
+                    break;
+                case 's':
+                    //server message
+                    const params: any[] = JSON.parse(message);
+                    this.handleServerMessage(params.shift() as any, params);
+                    break;
+
+                default:
+                    if (this.cmdStack.has(tag)) {
+                        const handle = this.cmdStack.get(tag)
+                        this.cmdStack.delete(tag)
+                        const param = message ? JSON.parse(message) : null
+                        handle.resolve(param)
+                    } else {
+                        L('Unhandled CMD Response', tag, message)
+                    }
+                    break;
             }
         } else {
             this.decrypt(message)
@@ -304,7 +228,6 @@ export default class Client {
             case 'Cmd':
                 const args = params[0] as WhatsAppServerMsgCmd
                 this.event.emit(args.type || 'cmd', ...params)
-                L('Got CMD', args)
                 if (this.serverCmdHandlers[args.type]) {
                     this.serverCmdHandlers[args.type](args)
                 } else {
@@ -323,6 +246,11 @@ export default class Client {
     }
     /** Internal command handler */
     private serverCmdHandlers = {
+        disconnect: (args) => {
+            if (args.kind == 'replaced') {
+                this.event.emit('replaced')
+            }
+        },
         challenge: (args: WhatsAppServerMsgCmdChallenge) => {
             L('Handling challenge');
             const signed = this.sign(Buffer.from(args.challenge, 'base64'))
