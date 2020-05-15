@@ -1,4 +1,3 @@
-import WebSocket from "ws";
 import { randomBytes, createHmac } from "crypto";
 import { arch, platform } from "os";
 import {
@@ -10,6 +9,8 @@ import { configLoad, configStore, Color } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys, AESDecrypt, AESEncrypt } from "./secure";
 import { EventEmitter } from "events";
 import authRestoreTakeOver from "./auth/restore-takeover";
+import WASocket from "./wa-socket";
+import { commandTagHandlers } from "./handler";
 
 export default class Client {
     /** This app name */
@@ -33,11 +34,10 @@ export default class Client {
         Conn?: WhatsAppServerMsgConn
     } = {};
 
-    ws: WebSocket
+    ws: WASocket
     timeSkew: number
 
     private messageConter: number = 0
-    private cmdStack = new Map<String, { message: String | Buffer, resolve: Function, reject: Function }>()
     protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void
 
     constructor(private authFile = '.auth', private event: EventEmitter) {
@@ -56,12 +56,10 @@ export default class Client {
         return new Promise<WhatsAppServerMsgConn>(
             (resolve, reject) => {
 
-                this.ws = new WebSocket("wss://web.whatsapp.com/ws", {
-                    origin: "https://web.whatsapp.com",
-                })
+                this.ws = new WASocket(this.event)
                 const onOpen = () => {
                     // Swap error listener
-                    this.ws.removeListener("error", reject)
+                    this.event.removeListener("error", reject)
                     // INIT
                     this.sendCmd<CmdInitResponse>('admin', 'init',
                         this.version.split('.').map(v => parseInt(v)),
@@ -94,12 +92,10 @@ export default class Client {
                     }).then(resolve).catch(reject)
                 }
 
-                this.ws.on('error', (e) => this.event.emit('error', e))
-                this.ws.on('close', (...args) => this.event.emit('close', ...args))
                 // Fail on early error
-                this.ws.once("error", reject)
-                this.ws.once("open", onOpen)
-                this.ws.on("message", this.onMessage)
+                this.event.once("error", reject)
+                this.event.once("open", onOpen)
+                this.event.on("message", this.onMessage)
             }
         )
     }
@@ -134,10 +130,7 @@ export default class Client {
         this.onReady(info);
     }
 
-    private onMessage = (data: string | Buffer) => {
-        const firstCommaPos = data.indexOf(',');
-        const tag = data.slice(0, firstCommaPos).toString('ascii')
-        const message: string | Buffer = data.slice(firstCommaPos + 1)
+    private onMessage = (tag: string, message: string | Buffer) => {
         let logs = [Color.g("<<"), tag]
         if (typeof message == 'string') {
 
@@ -153,10 +146,10 @@ export default class Client {
                     break;
 
                 default:
-                    if (this.cmdStack.has(tag)) {
+                    if (commandTagHandlers.has(tag)) {
                         logs.push(Color.g('(resolved)'))
-                        const handle = this.cmdStack.get(tag)
-                        this.cmdStack.delete(tag)
+                        const handle = commandTagHandlers.get(tag)
+                        commandTagHandlers.delete(tag)
                         handle.resolve(message ? JSON.parse(message) : message)
                     } else {
                         logs.push(Color.r('(unhandled)'), message)
@@ -167,7 +160,6 @@ export default class Client {
             logs.push(Color.b('(Binary)'))
             this.decrypt(message)
         }
-
         L.apply(undefined, logs)
     }
 
@@ -194,31 +186,14 @@ export default class Client {
         return Buffer.concat([hmac, data])
     }
 
-    send<T = any>(message: Buffer | string) {
-        return new Promise<T>(
-            (resolve, reject) => {
-                const tag = `${Date.now()}.${this.messageConter++}`
-                if (typeof message == 'string') {
-                    message = `${tag},${message}`
-                } else {
-                    // encrypted
-                    message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
-                }
-                this.cmdStack.set(tag, { message, resolve, reject })
-                L(Color.y('>>'), tag)
-                this.ws.send(message)
-            }
-        )
-    }
-
     sendCmd<T = any>(scope: WhatsAppCmdType, cmd: WhatsAppCmdAction, ...args: Array<string | boolean | any[]>) {
-        return this.send<T>(JSON.stringify(
+        return this.ws.send<T>(JSON.stringify(
             [scope, cmd, ...args]
         ))
     }
     sendBin<T = any>(cmd: string, attr: any, data?: any) {
         const message = this.encrypt(Buffer.from(JSON.stringify([cmd, attr, data]), 'ascii'))
-        return this.send(message)
+        return this.ws.send(message)
     }
     private handleServerMessage(cmd: WhatsAppServerMsg, params: any[]) {
         switch (cmd) {
@@ -272,9 +247,8 @@ export default class Client {
         const sign = createHmac('sha256', this.config.macKey).update(data).digest()
         return Buffer.concat([sign, data])
     }
+
     close() {
-        if (this.ws && this.ws.readyState == this.ws.OPEN) {
-            this.ws.close()
-        }
+        this.ws.close()
     }
 }

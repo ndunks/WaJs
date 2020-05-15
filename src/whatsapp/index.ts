@@ -56,7 +56,8 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     on(event: 'error', listener: (this: WebSocket, err: Error) => void): this;
     /** WebSocket Closed */
     on(event: 'close', listener: (this: WebSocket, code: number, reason: string) => void): this;
-
+    /** Got message */
+    on(event: 'message', listener: (tag: string, data: Buffer | string) => void): this;
 }
 
 export default WhatsApp
