@@ -38,7 +38,7 @@ function markRead(buf: BinaryBuffer, size: number) {
     let a = index + size
     if (a > buf._readEndIndex)
         throw new Error(index === buf._readEndIndex ? "ReadError: tried to read from depleted binary" : "ReadError: tried to read beyond end of binary");
-    buf._readIndex = a
+    buf._readIndex = a;
     buf._hiddenReads || (buf._earliestIndex = a)
     return index
 }

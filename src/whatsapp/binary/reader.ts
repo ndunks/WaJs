@@ -4,6 +4,7 @@ import Dictionary from "../dictionary";
 import BufferReader from "./buffer-reader";
 import Wid from "../wid/wid";
 import WidFactory from "../wid/wid-factory";
+import { Color } from "../../utils";
 
 
 function tryMakeWid(str: string) {
@@ -33,13 +34,13 @@ export function readString(buf: BufferReader, tag: BinaryTag, autoCreateWid = tr
         case BinaryTag.LIST_EMPTY:
             return;
         case BinaryTag.BINARY_8:
-            tmpStr = readString(buf, buf.readByte())
+            tmpStr = buf.readString(buf.readByte())
             return buf.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
         case BinaryTag.BINARY_20:
-            tmpStr = readString(buf, buf.readInt20())
+            tmpStr = buf.readString(buf.readInt20())
             return buf.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
         case BinaryTag.BINARY_32:
-            tmpStr = readString(buf, buf.readInt32())
+            tmpStr = buf.readString(buf.readInt32())
             return buf.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
         case BinaryTag.JID_PAIR:
             let f = readString(buf, buf.readByte())
@@ -76,11 +77,15 @@ export function readString(buf: BufferReader, tag: BinaryTag, autoCreateWid = tr
 export function readList(buf: BufferReader, byteTag: BinaryTag) {
     let list = []
     let size = readListSize(buf, byteTag)
+    L('ListSize', size)
     for (let i = 0; i < size; i++) {
         try {
-            list.push(readNode(buf))
+            const child = readNode(buf)
+            list.push(child)
+            L("LIST", child)
         } catch (error) {
-            E('Fail readList at ', i)
+            E(Color.r('Fail readList at'), i)
+            L(list)
             break
         }
     }
@@ -171,24 +176,24 @@ export function readNode(buf: BufferReader) {
         return { tag, attr }
     }
 
-    let data;
+    let child;
 
     byteTag = buf.readByte()
     //L(`reader: readNode[${buf.index}]`, tag, 'Data', byteTag, BinaryTag[byteTag]);
     if (isListTag(byteTag)) {
-        data = readList(buf, byteTag);
+        child = readList(buf, byteTag);
     } else if (byteTag === BinaryTag.BINARY_8) {
         var c = buf.readByte();
-        data = buf.readBytes(c)
+        child = buf.readBytes(c)
     } else if (byteTag === BinaryTag.BINARY_20) {
         var u = buf.readInt20();
-        data = buf.readBytes(u)
+        child = buf.readBytes(u)
     } else if (byteTag === BinaryTag.BINARY_32) {
         var l = buf.readInt32();
-        data = buf.readBytes(l)
+        child = buf.readBytes(l)
     } else
-        data = readString(buf, byteTag);
-    return { tag, attr, data }
+        child = readString(buf, byteTag);
+    return { tag, attr, child }
 }
 export function isListTag(tag: number) {
     return tag === BinaryTag.LIST_EMPTY || tag === BinaryTag.LIST_8 || tag === BinaryTag.LIST_16
@@ -209,6 +214,5 @@ export function readAttributes(buf: BufferReader, len: number): { [key: string]:
     }
 
     buf.READING_ATTR_FLAG = false
-    L(result)
     return result
 }

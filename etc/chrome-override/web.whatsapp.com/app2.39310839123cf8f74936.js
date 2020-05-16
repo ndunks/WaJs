@@ -22443,6 +22443,7 @@
                 }(t, a)
             } else
                 "preempt" === t.cmd ? function(e) {
+                    console.log("preempt1", e)
                     var t, a = l.default.Contact;
                     (0,
                     h.mungePSAContact)(e.response),
@@ -29316,6 +29317,7 @@
                         }
                         break;
                     case "contacts":
+                        console.log('Handle contacts', e, t, this.N)
                         LOG(2)(Te(), e);
                         var c = this.N.children(t);
                         if (Array.isArray(c)) {
@@ -29649,7 +29651,7 @@
                 var r = this;
                 return this.BinaryProtocol.read(e).then((function(e) {
                     switch (r.N.tag(e)) {
-                    case "response":
+                        case "response":
                         r.handleResponse(n, e, i, t);
                         break;
                     case "action":
@@ -35948,6 +35950,7 @@
                     throw new Error("invalid start token readString" + e.debugInfo());
                 if (n > 2 && n < 236) {
                     var u = this.getToken(n);
+                    console.log('readStringToken',n,'==',u)
                     return "s.whatsapp.net" === u && (u = "c.us"),
                     u
                 }
@@ -42543,8 +42546,11 @@
                     throw new Error("invalid start token readString" + e.debugInfo());
                 if (n > 2 && n < 236) {
                     var u = this.getToken(n);
+                    //console.log('readStringToken',n.toString(16),'==',u)
                     return "s.whatsapp.net" === u && (u = "c.us"),
                     u
+                }else{
+                    //console.log('readStringToken: NO',n.toString(16))
                 }
                 switch (n) {
                 case r.default.DICTIONARY_0:
@@ -42612,8 +42618,12 @@
             }
             ,
             this.readList = function(e, t) {
-                for (var a = [], n = this.readListSize(e, t), i = 0; i < n; i++)
-                    a.push(this.readNode(e));
+                for (var a = [], n = this.readListSize(e, t), i = 0; i < n; i++){
+                    var noe = this.readNode(e)
+                    a.push(noe);
+                    console.log('LIST', noe)
+                }
+                    
                 return a
             }
             ,
@@ -80857,8 +80867,9 @@
             this.Node = a("bcjjbcbjaa"),
             u.default.supportsFeature(u.default.F.MD_BACKEND) || (this.read = function(e) {
                 return f.decrypt(e).then((function(e) {
+                    console.log('BINREAD', e)
                     var res = l.readNode(new d(e));
-                    console.log('BINREAD', res)
+                    console.log(res)
                     return res
                 }
                 ))
