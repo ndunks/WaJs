@@ -14797,16 +14797,20 @@
             }, {
                 key: "shortTag",
                 value: function() {
-                    return this.shortTagBase || (this.shortTagBase = ((0,
+                    var tag = this.shortTagBase || (this.shortTagBase = ((0,
                     w.default)().unix() % 1e3).toString()),
-                    "".concat(this.shortTagBase, ".--").concat(this.sequence++)
+                    "".concat(this.shortTagBase, ".--").concat(this.sequence++);
+                    console.log('SHORTTAG', tag, this.shortTagBase);
+                    return tag;
                 }
             }, {
                 key: "tag",
                 value: function(e) {
                     var t = "".concat((0,
                     w.default)().unix(), ".--").concat(this.sequence++);
-                    return e && R.FLAVOR_TAGS ? t + "-" + e : t
+                    var tag = e && R.FLAVOR_TAGS ? t + "-" + e : t;
+                    console.log('TAG', tag, e)
+                    return tag
                 }
             }, {
                 key: "launch",

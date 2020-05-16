@@ -29125,6 +29125,7 @@
                     a(e)
                 }
                 ;
+                console.log('BINSEN2', t)
                 return delete n.epochIneligible,
                 this.BinaryProtocol.write(t).then((function(a) {
                     i.debugObj || (i.debugObj = t),
@@ -80731,6 +80732,7 @@
                     a(e)
                 }
                 ;
+                console.log('BINSEN1', t)
                 return delete n.epochIneligible,
                 this.BinaryProtocol.write(t).then((function(a) {
                     i.debugObj || (i.debugObj = t),
@@ -80862,7 +80864,7 @@
             u.default.supportsFeature(u.default.F.MD_BACKEND) || (this.read = function(e) {
                 return f.decrypt(e).then((function(e) {
                     let read = l.readNode(new d(e))
-                    console.log('READ', read)
+                    console.log('READBIN', read)
                     return read
                 }
                 ))
@@ -80871,7 +80873,7 @@
             this.write = function(e) {
                 return Promise.callSynchronously((function() {
                     var t = new r;
-                    console.log('WRITE', e)
+                    console.log('WRITEBIN', e)
                     return s.writeNode(t, e),
                     f.encrypt(t.toBuffer())
                 }
@@ -88079,12 +88081,12 @@
             },
             contactFindQuery: function(e, t) {
                 var a = this;
-                return new Promise((function(n, i) {
-                    var r = a.queryNode({
+                return new Promise((function(resolve, reject) {
+                    var queryNode = a.queryNode({
                         type: "contacts",
                         kind: e ? "retry" : void 0
                     }, void 0);
-                    a.binSend("send", r, i, {
+                    a.binSend("send", queryNode, reject, {
                         onSend: a.binWrap((function(e) {
                             a.BinaryProtocol.read(e).then((function(e) {
                                 var t = []
@@ -88099,16 +88101,16 @@
                                             s && t.push(s)
                                         }
                                     }
-                                n({
+                                resolve({
                                     checksum: a.N.attr("checksum", e),
                                     data: t
                                 })
                             }
-                            )).catch(i)
+                            )).catch(reject)
                         }
-                        ), n),
+                        ), resolve),
                         logOnSend: t,
-                        onDrop: a.wrap(i)
+                        onDrop: a.wrap(reject)
                     }, {
                         debugString: "query,contacts, " + String(e),
                         metricName: "QUERY_CONTACTS",

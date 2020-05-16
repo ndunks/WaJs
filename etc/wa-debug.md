@@ -1,7 +1,8 @@
 # Web WhatsApp Debuging tips
 
 Use chrome override, save to override and pretty print file `app.{hash}.js` also with `index` files
-
+- search binSend to get data before ecnrypted
+- search Query to get request command sample
 - search 'Unexpected message event type' to find parser function
 - Search '_onMessage' to find on WS Message, can be string or encrypted buffer
 - `this.msgParser` is responsible for spliting tag and data
@@ -28,7 +29,7 @@ String data with ! as begining is special meaning
 - BinaryProtocol.read will Decrypt data
 - readNode
 
-You can add Log function when BinaryProtocol Read/Write (not encrypted)
+You can add Log function when BinaryProtocol Read/Write (before encrypt)
 
 ``` js
 this.read = function(e) {
