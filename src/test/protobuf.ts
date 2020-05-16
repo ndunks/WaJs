@@ -1,6 +1,6 @@
 import "../whatsapp_pb"
 import * as assert from "assert";
-import { Message } from "google-protobuf";
+
 const plainObj = {
     id: 'AEDF49F7E5FD1F',
     displayname: 'Sample Display Name'
