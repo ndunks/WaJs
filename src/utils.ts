@@ -1,5 +1,15 @@
 import { readFileSync, writeFileSync } from "fs";
 import { WhatsAppClientConfig } from "./whatsapp/interfaces"
+declare global {
+    var L: typeof console.log;
+    var E: typeof console.error;
+}
+
+///@ts-ignore
+global.L = console.log
+///@ts-ignore
+global.E = console.error
+
 
 function configLoad(file: string) {
     const obj = JSON.parse(readFileSync(file, 'utf8'))

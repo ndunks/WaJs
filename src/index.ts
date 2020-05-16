@@ -1,15 +1,6 @@
+import "./utils"
 import WhatsApp from "./whatsapp";
 import { Color } from "./utils";
-
-declare global {
-    var L: typeof console.log;
-    var E: typeof console.error;
-}
-
-///@ts-ignore
-global.L = console.log
-///@ts-ignore
-global.E = console.error
 
 const wa = new WhatsApp();
 wa.connect().then(

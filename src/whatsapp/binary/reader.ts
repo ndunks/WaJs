@@ -76,10 +76,13 @@ export function readString(buf: BufferReader, tag: BinaryTag, autoCreateWid = tr
 export function readList(buf: BufferReader, byteTag: BinaryTag) {
     let list = []
     let size = readListSize(buf, byteTag)
-    //L('reader: readList', size);
     for (let i = 0; i < size; i++) {
-        //L('reader: readList', i)
-        list.push(readNode(buf));
+        try {
+            list.push(readNode(buf))
+        } catch (error) {
+            E('Fail readList at ', i)
+            break
+        }
     }
     return list
 }
