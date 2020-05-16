@@ -77,15 +77,12 @@ export function readString(buf: BufferReader, tag: BinaryTag, autoCreateWid = tr
 export function readList(buf: BufferReader, byteTag: BinaryTag) {
     let list = []
     let size = readListSize(buf, byteTag)
-    L('ListSize', size)
     for (let i = 0; i < size; i++) {
         try {
             const child = readNode(buf)
             list.push(child)
-            L("LIST", child)
         } catch (error) {
-            E(Color.r('Fail readList at'), i)
-            L(list)
+            E(Color.r('Fail readList at'), i, error)
             break
         }
     }
@@ -144,7 +141,7 @@ export function readListSize(buf: BufferReader, tag: BinaryTag): number {
 
 export function getToken(no: number) {
     if (no < 3 || no >= Dictionary.singleByte.length) {
-        throw new Error("Undefined Byte Token")
+        throw new Error("Undefined Byte Token: " + no)
     }
     return Dictionary.singleByte[no]
 }
