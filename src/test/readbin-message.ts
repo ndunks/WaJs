@@ -24,9 +24,9 @@ for (const file of files) {
 
     assert.equal(result.tag, 'action')
     assert.ok(result.attr)
-    assert.strictEqual(Array.isArray(result.data), true)
-    for (const msg of result.data) {
-        const obj: any = proto.proto.WebMessageInfo.deserializeBinary(msg.data).toObject()
+    assert.strictEqual(Array.isArray(result.child), true)
+    for (const msg of result.child) {
+        const obj: any = proto.proto.WebMessageInfo.deserializeBinary(msg.child).toObject()
         assert.ok(obj)
         assert.ok(obj.key)
     }
