@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
-    "allowJs": false,
+    "allowJs": true,
     "checkJs": false,
     "outDir": "dist/",
     "strict": false,
@@ -11,6 +11,7 @@
     "forceConsistentCasingInFileNames": true
   },
   "include": [
-    "src/**/*.ts"
+    "src/**/*.ts",
+    "src/whatsapp_pb.js"
   ]
 }
