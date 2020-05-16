@@ -20,7 +20,7 @@ export default function authLoginQRCode(this: Client, ref: string, ttl: number) 
         }
         const checker = () => {
             console.log('Refreshing QR Code..')
-            this.sendCmd<CmdInitResponse>('admin', 'Conn', 'reref').then(
+            this.ws.sendCmd<CmdInitResponse>('admin', 'Conn', 'reref').then(
                 response => {
                     switch (response.status) {
                         case 429:

@@ -7,7 +7,7 @@ export default function authRestoreTakeOver(this: Client, ref: string, ttl: numb
             this.onReady = null
             err ? reject(err) : resolve(info)
         }
-        this.sendCmd('admin', 'login',
+        this.ws.sendCmd('admin', 'login',
             this.config.tokens.client,
             this.config.tokens.server,
             this.config.clientId,

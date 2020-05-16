@@ -1,6 +1,6 @@
 import Client from "./client";
 import { EventEmitter } from "events";
-import { WhatsAppServerMsg } from "./interfaces";
+import { WhatsAppServerMsg, DataMsgTypes, DataPresence } from "./interfaces";
 import { Color } from "../utils";
 
 class WhatsApp extends EventEmitter {
@@ -42,7 +42,7 @@ class WhatsApp extends EventEmitter {
     }
 
     getContacts() {
-        return this.client.sendBin("query", { type: "contacts", epoch: "1" })
+        return this.client.ws.sendBin("query", { epoch: "1", kind: undefined, type: "contacts" })
     }
 
     state() {
@@ -73,6 +73,11 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     on(event: 'server-message', listener: (cmd: WhatsAppServerMsg, data: Array<any> | Object) => void): this;
     /** '!' prefixed */
     on(event: 'timeskew', listener: (ts: number, message: null | string | Buffer) => void): this;
+    on(event: 'Stream', listener: (data: any) => void): this;
+    on(event: 'Props', listener: (data: any) => void): this;
+    on(event: 'Blocklist', listener: (data: any) => void): this;
+    on(event: 'Presence', listener: (data: DataPresence) => void): this;
+    on(event: 'Msg', listener: (data: DataMsgTypes) => void): this;
 }
 
 export default WhatsApp

@@ -23,9 +23,9 @@ export interface WhatsAppClientConfig {
     }
 }
 
-export type WhatsAppCmdType = 'admin' | ''
-export type WhatsAppCmdAction = 'init' | 'Conn' | 'login' | 'challenge' | ''
-export type WhatsAppServerMsg = 'Conn' | 'Blocklist' | 'Stream' | 'Props' | 'Cmd' | 'Msg'
+export type WhatsAppCmdType = 'admin' | 'query' | string
+export type WhatsAppCmdAction = 'init' | 'Conn' | 'login' | 'challenge' | string
+export type WhatsAppServerMsg = 'Conn' | 'Blocklist' | 'Stream' | 'Props' | 'Cmd' | 'Msg' | 'Presence'
 export interface WhatsAppServerMsgCmd {
     type: 'disconnect' | 'challenge' | string
 }
@@ -107,4 +107,37 @@ export interface CmdInitResponse {
     update: boolean // false,
     curr: string    // '2.2019.6',
     time: number   // 1589285271073
+}
+
+
+/** xxxxxxxx@c.us */
+export type PhoneNum = string
+export interface DataMsg {
+    cmd: 'ack' | 'acks'
+    /** Msg id */
+    id: string | string[] // '3AA93912230CC6CD0516'
+    /** 1: out, 2: received, 3: read */
+    ack: number // 1 - 3 ?
+    from: PhoneNum
+    to: PhoneNum
+    /** Unix TS */
+    t: number
+}
+export interface DataMsgSingle extends DataMsg {
+    cmd: 'ack'
+    id: string
+}
+
+export interface DataMsgsMulti extends DataMsg {
+    cmd: 'acks'
+    id: string[]
+}
+export type DataMsgTypes = DataMsgSingle | DataMsgsMulti
+export interface DataPresence {
+    /** WA ID/Phone Number */
+    id: string // 6285747168008@c.us
+    type: 'unavailable' | 'available' | 'composing'
+    /** Unix TS */
+    t: number
+    deny: boolean
 }

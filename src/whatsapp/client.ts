@@ -60,7 +60,7 @@ export default class Client {
                     // Swap error listener
                     this.event.removeListener("error", reject)
                     // INIT
-                    this.sendCmd<CmdInitResponse>('admin', 'init',
+                    this.ws.sendCmd<CmdInitResponse>('admin', 'init',
                         this.version.split('.').map(v => parseInt(v)),
                         [this.clientName, platform(), arch()],
                         this.config.clientId,
@@ -127,24 +127,14 @@ export default class Client {
         this.onReady(info);
     }
 
-    sendCmd<T = any>(scope: WhatsAppCmdType, cmd: WhatsAppCmdAction, ...args: Array<string | boolean | any[]>) {
-        return this.ws.sendCmd<T>(scope, cmd, ...args)
-    }
-
-    sendBin<T = any>(cmd: string, attr: any, data?: any) {
-        return this.ws.send<T>(Buffer.from(JSON.stringify([cmd, attr, data]), 'ascii'))
-    }
-
     private handleServerMessage(cmd: WhatsAppServerMsg, params: any[]) {
         switch (cmd) {
             case 'Stream':
-                // Ignore
-                return;
             case 'Props':
-                return this.event.emit('props', params[0])
             case 'Blocklist':
-                return this.event.emit('blocklist', params[0])
-                return;
+            case 'Presence':
+            case 'Msg':
+                return this.event.emit(cmd, params[0])
             case 'Cmd':
                 const args = params[0] as WhatsAppServerMsgCmd
                 if (this.serverCmdHandlers[args.type]) {
@@ -159,7 +149,7 @@ export default class Client {
                 break;
             default:
                 this.serverData[cmd] = params[0]
-                L('handleServerMessage:', cmd, params)
+                L(Color.r('handleServerMessage:'), cmd, params)
                 break;
         }
     }
@@ -174,7 +164,7 @@ export default class Client {
         challenge: (args: WhatsAppServerMsgCmdChallenge) => {
             L('Handling challenge');
             const signed = this.sign(Buffer.from(args.challenge, 'base64'))
-            return this.sendCmd('admin', 'challenge',
+            return this.ws.sendCmd('admin', 'challenge',
                 signed.toString('base64'),
                 this.config.tokens.server,
                 this.config.clientId)

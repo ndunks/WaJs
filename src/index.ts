@@ -13,7 +13,11 @@ global.E = console.error
 const wa = new WhatsApp();
 wa.connect().then(
     info => {
-        console.log('Connected to whatsapp:', info.pushname, info.phone);
+        console.log('Connected to whatsapp:',
+            info.pushname,
+            info.phone.device_manufacturer,
+            info.phone.device_model
+        );
         setTimeout(() => {
             wa.getContacts().then(
                 contacts => {
@@ -23,6 +27,14 @@ wa.connect().then(
         }, 4000)
     }
 ).catch(err => console.error(err))
+
+wa.on('Msg', (data) => {
+    L('::Msg', data)
+})
+
+wa.on('Presence', (data) => {
+    L('::Presence', data)
+})
 
 wa.on('disconnect', (kind) => {
     L('::disconnect', kind)

@@ -9,6 +9,8 @@ export class WASocket {
     private messageConter: number = 0
 
     public sock: WebSocket
+    private shortTagBase: string = `${Math.floor(Date.now() / 1000) % 1000}`
+
     constructor(private event: EventEmitter, private config: WhatsAppClientConfig) {
 
         this.sock = new WebSocket("wss://web.whatsapp.com/ws", {
@@ -102,10 +104,18 @@ export class WASocket {
     sendRaw(data, cb: (err?: Error) => void) {
         return this.sock.send(data, cb)
     }
-    send<T = any>(message: Buffer | string, hint?: string) {
+    shortTag() {
+        return `${this.shortTagBase}.--${this.messageConter++}`
+    }
+    tag() {
+        return `${Math.floor(Date.now() / 1000)}.--${this.messageConter++}`
+    }
+    send<T = any>(message: Buffer | string, hint?: string, tag?: string) {
+        if (!tag) {
+            tag = this.tag()
+        }
         return new Promise<T>(
             (resolve, reject) => {
-                const tag = `${Date.now()}.${this.messageConter++}`
                 if (typeof message == 'string') {
                     message = `${tag},${message}`
                 } else {
@@ -126,6 +136,11 @@ export class WASocket {
         ),
             `${scope},${cmd}`
         )
+    }
+    sendBin<T = any>(cmd: string, attr: any, data?: any) {
+        const msg = [cmd, attr, data]
+        console.log('sendBin', msg);
+        return this.send<T>(Buffer.from(JSON.stringify(msg), 'ascii'), this.shortTag())
     }
 
     close() {
