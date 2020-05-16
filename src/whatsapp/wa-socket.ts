@@ -2,7 +2,7 @@ import WebSocket from "ws";
 import { WhatsAppCmdType, WhatsAppCmdAction, WhatsAppClientConfig } from "./interfaces";
 import { EventEmitter } from "events";
 import { Color } from "../utils";
-import { commandTagHandlers } from "./handler";
+import { commandTagHandlers, AsyncTagHandler } from "./handler";
 import { hmacDecrypt, hmacEncrypt } from "./secure";
 
 export class WASocket {
@@ -25,6 +25,7 @@ export class WASocket {
             if (firstCommaPos < 0) {
                 if (typeof data == 'string') {
                     tag = data
+                    message = ''
                 } else {
                     tag = ''
                     message = data
@@ -38,17 +39,24 @@ export class WASocket {
             logs.push(tag)
             if (message instanceof Buffer) {
                 logs.push(Color.b('BIN'))
-                message = hmacDecrypt(this.config.aesKey, this.config.macKey, message)
+                try {
+                    message = hmacDecrypt(this.config.aesKey, this.config.macKey, message)
+                } catch (error) {
+                    logs.push(Color.r(error))
+                    message = ''
+                }
             } else if (message.length && (message[0] == '[' || message[0] == '{')) {
                 logs.push(Color.b('JSON'))
                 message = JSON.parse(message)
             }
+            let emitEvents: any[];
+            let handle: AsyncTagHandler;
 
             switch (tag[0]) {
                 case '!':
                     let ts = parseInt(tag.slice(1))
-                    this.event.emit('timeskew', ts, message)
                     logs.push('[timeskew]');
+                    emitEvents = ['timeskew', ts, message]
                     break;
 
                 case 's':
@@ -57,37 +65,42 @@ export class WASocket {
                     } else if (typeof message == 'object') {
                         const params: any[] = message as any
                         logs.push(Color.b('[server-message]'))
-                        this.event.emit('server-message', params.shift(), params)
+                        emitEvents = ['server-message', params.shift(), params]
                     } else {
                         logs.push(Color.r('(!) Not object server message'), message)
                     }
                     break;
-                default:
-                    if (commandTagHandlers.has(tag)) {
-                        logs.push(Color.g('[handled]'))
-                        const handle = commandTagHandlers.get(tag)
-                        commandTagHandlers.delete(tag)
-                        try {
-                            handle.resolve(message)
-                        } catch (error) {
-                            logs.push(Color.r('ERR'), error)
-                        }
-                    } else {
-                        logs.push(Color.r('[unhandled]'))
-                        if (typeof message == 'string' || message instanceof Buffer) {
-                            logs.push(message.constructor.name, message.length)
-                        } else {
-                            logs.push(message)
-                        }
-                        //event.emit('message', tag, message)
-                    }
-                    break
+            }
+
+            // Check for async handler that waiting thats tag
+            if (tag) {
+                if (commandTagHandlers.has(tag)) {
+                    logs.push(Color.g('[handled]'))
+                    handle = commandTagHandlers.get(tag)
+                    commandTagHandlers.delete(tag)
+                } else if (!emitEvents) {
+                    logs.push(Color.r('[unhandled]'))
+                    if (typeof message != 'string' && !(message instanceof Buffer))
+                        logs.push(message)
+                }
             }
             L.apply(undefined, logs)
+            if (emitEvents) {
+                this.event.emit.apply(this.event, emitEvents)
+            }
+            if (handle) {
+                try {
+                    handle.callback.call(this, message)
+                } catch (error) {
+                    E('callback error', error)
+                }
+            }
         })
 
     }
-
+    sendRaw(data, cb: (err?: Error) => void) {
+        return this.sock.send(data, cb)
+    }
     send<T = any>(message: Buffer | string, hint?: string) {
         return new Promise<T>(
             (resolve, reject) => {
@@ -99,9 +112,9 @@ export class WASocket {
                     message = hmacEncrypt(this.config.aesKey, this.config.macKey, message)
                     message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
                 }
-                commandTagHandlers.set(tag, { message, resolve, reject, hint })
+                commandTagHandlers.set(tag, { message, callback: resolve, hint })
                 L(Color.y('>>'), tag, hint)
-                this.sock.send(message)
+                this.sock.send(message, err => err ? reject(err) : null)
             }
         )
     }

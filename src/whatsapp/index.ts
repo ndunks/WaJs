@@ -1,6 +1,7 @@
 import Client from "./client";
 import { EventEmitter } from "events";
 import { WhatsAppServerMsg } from "./interfaces";
+import { Color } from "../utils";
 
 class WhatsApp extends EventEmitter {
     client: Client
@@ -21,14 +22,17 @@ class WhatsApp extends EventEmitter {
         )
     }
     private watchdog = () => {
-        try {
-            this.client.ws.send('?,,', 'watchdog')
-            this.keepAliveTimer = setTimeout(this.watchdog, 30000)
-        } catch (e) {
-            this.keepAliveTimer = null
-            E('Watchdog fail')
-            this.close()
-        }
+        this.client.ws.sendRaw('?,,', (e) => {
+            if (e) {
+                this.keepAliveTimer = null
+                E('Watchdog fail')
+                this.close()
+            } else {
+                this.keepAliveTimer = setTimeout(this.watchdog, 30000)
+                L(Color.y('>>'), Color.g('watchdog ok'))
+            }
+        })
+
     }
 
     getContacts() {

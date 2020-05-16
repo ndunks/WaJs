@@ -10,15 +10,15 @@ export function generateKeyPair() {
 
 export function hmacDecrypt(aesKey:Buffer, macKey: Buffer, data: Buffer) {
     if (!aesKey) {
-        throw new Error("GotBuffer but no key to decrypt")
+        throw "GotBuffer but no key to decrypt"
     }
     if (!macKey) {
-        throw new Error("no hmac key to verify")
+        throw "no hmac key to verify"
     }
     const hmac = crypto.createHmac('sha256', macKey).update(data.slice(32)).digest()
 
     if (hmac.compare(data.slice(0, 32)) !== 0) {
-        throw new Error('Hmac Miss Match');
+        throw 'Hmac Miss Match'
     }
     return AESDecrypt(aesKey, data.slice(32, 32 + 16), data.slice(32 + 16))
 }
