@@ -2,7 +2,9 @@ import BinaryBuffer from "./buffer";
 
 //app2.b77125350eb0570a9fcd.js#djchfddccj
 export default class BufferReader {
-
+    READING_ATTR_FLAG: boolean = false;
+    CURRENT_ATTR_KEY: string;
+    
     constructor(public buf: BinaryBuffer) {
     }
     get index() {

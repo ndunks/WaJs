@@ -50,5 +50,5 @@ wa.on('timeskew', (ts) => {
 })
 
 wa.on('close', (code, reason) => {
-    L(Color.m('::'), 'close')
+    L(Color.m('::'), 'close', code, reason)
 })

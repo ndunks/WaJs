@@ -1,7 +1,7 @@
 
 import * as fs from "fs"
 import BinaryBuffer from "../src/whatsapp/binary/buffer";
-import BinaryReader from "../src/whatsapp/binary/reader";
+import {readNode } from "../src/whatsapp/binary/reader";
 import BufferReader from "../src/whatsapp/binary/buffer-reader";
 
 const dir = `${__dirname}/binary-sample`
@@ -29,9 +29,8 @@ describe("Binary", () => {
             const buf = new BinaryBuffer(nodeBuffer)
             console.log('TEST', file, nodeBuffer.length, buf.size());
             const bufferReader = new BufferReader(buf)
-            const reader = new BinaryReader();
             expect(() => {
-                let res = reader.readNode(bufferReader)
+                let res = readNode(bufferReader)
                 console.log('OK', file, res.tag, res.attr, nodeDataDumper(res.data));
                 console.log('------------')
             }).not.toThrow()
@@ -45,9 +44,8 @@ describe("Binary", () => {
             const buf = new BinaryBuffer(nodeBuffer)
             console.log('TEST', file, nodeBuffer.length, buf.size());
             const bufferReader = new BufferReader(buf)
-            const reader = new BinaryReader();
             expect(() => {
-                let res = reader.readNode(bufferReader)
+                let res = readNode(bufferReader)
                 console.log('OK', file, res.tag, res.attr, nodeDataDumper(res.data));
                 console.log('------------')
             }).not.toThrow()
