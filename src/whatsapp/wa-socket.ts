@@ -137,10 +137,14 @@ export class WASocket {
             `${scope},${cmd}`
         )
     }
-    sendBin<T = any>(cmd: string, attr: any, data?: any) {
+    sendBin<T = any>(cmd: string, attr: any, data?: any, hint?: string) {
         const msg = [cmd, attr, data]
         console.log('sendBin', msg);
-        return this.send<T>(Buffer.from(JSON.stringify(msg), 'ascii'), this.shortTag())
+        return this.send<T>(
+            Buffer.from(JSON.stringify(msg), 'ascii'),
+            hint,
+            this.shortTag()
+        )
     }
 
     close() {

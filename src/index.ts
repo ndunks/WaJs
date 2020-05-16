@@ -1,4 +1,5 @@
 import WhatsApp from "./whatsapp";
+import { Color } from "./utils";
 
 declare global {
     var L: typeof console.log;
@@ -24,30 +25,30 @@ wa.connect().then(
                     console.log('Contacts', contacts)
                 }
             )
-        }, 4000)
+        }, 2000)
     }
 ).catch(err => console.error(err))
 
 wa.on('Msg', (data) => {
-    L('::Msg', data)
+    L(Color.m('::'), 'Msg', data)
 })
 
 wa.on('Presence', (data) => {
-    L('::Presence', data)
+    L(Color.m('::'), 'Presence', data)
 })
 
 wa.on('disconnect', (kind) => {
-    L('::disconnect', kind)
+    L(Color.m('::'), 'disconnect', kind)
 })
 
 wa.on('replaced', () => {
-    L('::replaced Login in another web whatsapp')
+    L(Color.m('::'), 'replaced Login in another web whatsapp')
 })
 
 wa.on('timeskew', (ts) => {
-    L('::timeskew', ts)
+    L(Color.m('::'), 'timeskew', ts)
 })
 
 wa.on('close', (code, reason) => {
-    L('::close')
+    L(Color.m('::'), 'close')
 })

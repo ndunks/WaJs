@@ -42,7 +42,12 @@ class WhatsApp extends EventEmitter {
     }
 
     getContacts() {
-        return this.client.ws.sendBin("query", { epoch: "1", kind: undefined, type: "contacts" })
+        return this.client.ws.sendBin(
+            "query",
+            { epoch: "1", kind: undefined, type: "contacts" },
+            undefined,
+            "getContacts"
+        )
     }
 
     state() {
