@@ -90,7 +90,8 @@ export class WASocket {
             }
             if (handle) {
                 try {
-                    handle.callback.call(this, message)
+                    handle.tag = tag
+                    handle.callback.call(handle, message)
                 } catch (error) {
                     E('callback error', error)
                 }
@@ -112,7 +113,7 @@ export class WASocket {
                     message = hmacEncrypt(this.config.aesKey, this.config.macKey, message)
                     message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
                 }
-                commandTagHandlers.set(tag, { message, callback: resolve, hint })
+                commandTagHandlers.set(tag, { sentMessage: message, callback: resolve, hint })
                 L(Color.y('>>'), tag, hint)
                 this.sock.send(message, err => err ? reject(err) : null)
             }

@@ -132,7 +132,7 @@ export default class Client {
     }
 
     sendBin<T = any>(cmd: string, attr: any, data?: any) {
-        return this.ws.send(Buffer.from(JSON.stringify([cmd, attr, data]), 'ascii'))
+        return this.ws.send<T>(Buffer.from(JSON.stringify([cmd, attr, data]), 'ascii'))
     }
 
     private handleServerMessage(cmd: WhatsAppServerMsg, params: any[]) {

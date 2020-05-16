@@ -14,11 +14,13 @@ const wa = new WhatsApp();
 wa.connect().then(
     info => {
         console.log('Connected to whatsapp:', info.pushname, info.phone);
-        wa.getContacts().then(
-            contacts => {
-                console.log('Contacts', contacts)
-            }
-        )
+        setTimeout(() => {
+            wa.getContacts().then(
+                contacts => {
+                    console.log('Contacts', contacts)
+                }
+            )
+        }, 4000)
     }
 ).catch(err => console.error(err))
 

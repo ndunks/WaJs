@@ -17,6 +17,12 @@ class WhatsApp extends EventEmitter {
                 this.keepAliveTimer = setTimeout(() => {
                     this.watchdog()
                 }, 10000)
+                this.once('close', () => {
+                    if (this.keepAliveTimer) {
+                        clearTimeout(this.keepAliveTimer)
+                        this.keepAliveTimer = null
+                    }
+                })
                 return info
             }
         )

@@ -35,7 +35,7 @@ export function AESEncrypt(key: Buffer, data: Buffer) {
     // Create IV
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)
-    const bufs = [cipher.update(data), cipher.final()]
+    const bufs = [iv, cipher.update(data), cipher.final()]
     return Buffer.concat(bufs)
 }
 
