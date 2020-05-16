@@ -7466,7 +7466,6 @@
         }),
         t.default = function(e) {
             var t = e.shift();
-            console.log('HANDLE',t)
             if (Array.isArray(t)) {
                 var a = []
                   , n = []
@@ -29125,7 +29124,6 @@
                     a(e)
                 }
                 ;
-                console.log('BINSEN2', t)
                 return delete n.epochIneligible,
                 this.BinaryProtocol.write(t).then((function(a) {
                     i.debugObj || (i.debugObj = t),
@@ -29299,8 +29297,7 @@
                 return n
             },
             handleResponse: function(e, t, a, n) {
-                if (0 === e.indexOf("preempt")){
-                    console.log('handleResponse preempt', t)
+                if (0 === e.indexOf("preempt"))
                     switch (this.N.attr("type", t)) {
                     case "chat":
                         LOG(2)(Pe(), e);
@@ -29338,7 +29335,6 @@
                     default:
                         LOG(4)(Me(), this.N.toString(t, !0))
                     }
-                }
                 else
                     LOG(4)(Ce(), this.N.toString(t, !0))
             },
@@ -60285,11 +60281,11 @@
         }(u.PureComponent);
         t.default = f
     },
-    Crypto: function(e, t, a) {
+    ddcchcchag: function(e, t, a) {
         "use strict";
         var n = a("bfejgijfbh")
           , i = a("cfjecfhbfg")
-          , r = a("CryptoHelper")
+          , r = a("dhgjbgdbhg")
           , o = a("ddjgcfjicj")
           , s = i(a("ecjehifjdd"))
           , d = i(a("cahfddcdga"))
@@ -60298,12 +60294,11 @@
             encrypt: function(e) {
                 if (!e)
                     throw new Error("Missing ArrayBuffer in cryptoAsync:encrypt");
-                let t = c.get()
-                let a = r.encryptAndMac(
-                    d.default(t.encKey),
-                    d.default(t.macKey),
-                    e
-                );
+                var t = c.get()
+                  , a = (0,
+                r.encryptAndMac)((0,
+                d.default)(t.encKey), (0,
+                d.default)(t.macKey), e);
                 return this._encryptQueue.enqueue(a)
             },
             decrypt: function(e) {
@@ -73736,7 +73731,7 @@
         };
         e.exports = _
     },
-    CryptoHelper: function(e, t, a) {
+    dhgjbgdbhg: function(e, t, a) {
         "use strict";
         var n = a("cfjecfhbfg");
         Object.defineProperty(t, "__esModule", {
@@ -80131,7 +80126,7 @@
           , c = n(a("dgcdacjddi"))
           , u = a("eaiigfgagg")
           , l = n(a("djhfjffeaj"))
-          , f = a("CryptoHelper")
+          , f = a("dhgjbgdbhg")
           , h = n(a("gchhabjba"))
           , p = n(a("bbejegbieb"))
           , g = n(a("cjieghfgda"));
@@ -80732,7 +80727,6 @@
                     a(e)
                 }
                 ;
-                console.log('BINSEN1', t)
                 return delete n.epochIneligible,
                 this.BinaryProtocol.write(t).then((function(a) {
                     i.debugObj || (i.debugObj = t),
@@ -80802,7 +80796,7 @@
             InputStream: l.default,
             Reader: a("chaebfegeh"),
             Dictionary: a("dabcaghhah"),
-            Crypto: a("Crypto")
+            Crypto: a("ddcchcchag")
         }
           , v = m({
             Dictionary: a("cbhhieidga")
@@ -80863,17 +80857,17 @@
             this.Node = a("bcjjbcbjaa"),
             u.default.supportsFeature(u.default.F.MD_BACKEND) || (this.read = function(e) {
                 return f.decrypt(e).then((function(e) {
-                    let read = l.readNode(new d(e))
-                    console.log('READBIN', read)
-                    return read
+                    var res = l.readNode(new d(e));
+                    console.log('BINREAD', res)
+                    return res
                 }
                 ))
             }
             ),
             this.write = function(e) {
+                console.log('BINWRITE', e)
                 return Promise.callSynchronously((function() {
                     var t = new r;
-                    console.log('WRITEBIN', e)
                     return s.writeNode(t, e),
                     f.encrypt(t.toBuffer())
                 }
@@ -88081,12 +88075,12 @@
             },
             contactFindQuery: function(e, t) {
                 var a = this;
-                return new Promise((function(resolve, reject) {
-                    var queryNode = a.queryNode({
+                return new Promise((function(n, i) {
+                    var r = a.queryNode({
                         type: "contacts",
                         kind: e ? "retry" : void 0
                     }, void 0);
-                    a.binSend("send", queryNode, reject, {
+                    a.binSend("send", r, i, {
                         onSend: a.binWrap((function(e) {
                             a.BinaryProtocol.read(e).then((function(e) {
                                 var t = []
@@ -88101,16 +88095,16 @@
                                             s && t.push(s)
                                         }
                                     }
-                                resolve({
+                                n({
                                     checksum: a.N.attr("checksum", e),
                                     data: t
                                 })
                             }
-                            )).catch(reject)
+                            )).catch(i)
                         }
-                        ), resolve),
+                        ), n),
                         logOnSend: t,
-                        onDrop: a.wrap(reject)
+                        onDrop: a.wrap(i)
                     }, {
                         debugString: "query,contacts, " + String(e),
                         metricName: "QUERY_CONTACTS",
@@ -98635,7 +98629,7 @@
                         onDrop: this.onDrop,
                         "aria-selected": u,
                         tabIndex: u ? 0 : -1,
-                        role: "group"
+                        role: "option"
                     }, f.createElement(p.default, {
                         id: n.id,
                         ref: this.setCellRef,

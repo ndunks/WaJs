@@ -195,7 +195,7 @@
                     }[e] || e) + "." + {
                         0: "11aaccc188ca5e557d9c",
                         1: "5ae14092de592af35a41",
-                        3: "b77125350eb0570a9fcd",
+                        3: "39310839123cf8f74936",
                         4: "72a8cbf8b2ef0cf9d5b4",
                         5: "290ab7434fcac545f96d",
                         6: "962b7e7741ee53d63cc6",
@@ -7520,7 +7520,6 @@
             e
         }
         var H, z, q = j.WebFeatures.FLAG;
-        console.log(j)
         function X(e) {
             return function() {
                 if (!H)
@@ -8151,7 +8150,7 @@
             e
         }();
         t.Wap = Z;
-        var $ = new Z;console.log($)
+        var $ = new Z;
         t.default = $
     },
     beghfcdcc: function(e, t, n) {
@@ -13457,7 +13456,6 @@
             return r(Date.now() / 1e3 - a)
         }
     },
-    // PROTOBUF Parser
     bgcffdiihh: function(e, t, n) {
         "use strict";
         var a = n("cfjecfhbfg");
@@ -14797,20 +14795,16 @@
             }, {
                 key: "shortTag",
                 value: function() {
-                    var tag = this.shortTagBase || (this.shortTagBase = ((0,
+                    return this.shortTagBase || (this.shortTagBase = ((0,
                     w.default)().unix() % 1e3).toString()),
-                    "".concat(this.shortTagBase, ".--").concat(this.sequence++);
-                    console.log('SHORTTAG', tag, this.shortTagBase);
-                    return tag;
+                    "".concat(this.shortTagBase, ".--").concat(this.sequence++)
                 }
             }, {
                 key: "tag",
                 value: function(e) {
                     var t = "".concat((0,
                     w.default)().unix(), ".--").concat(this.sequence++);
-                    var tag = e && R.FLAVOR_TAGS ? t + "-" + e : t;
-                    console.log('TAG', tag, e)
-                    return tag
+                    return e && R.FLAVOR_TAGS ? t + "-" + e : t
                 }
             }, {
                 key: "launch",
@@ -14883,7 +14877,6 @@
                 value: function() {
                     if (!this.conflictPromise)
                         throw "Takeover called without conflict!";
-                        console.log('takeover',this)
                     this.conflictPromise.cancel(new Ft)
                 }
             }, {
@@ -32879,10 +32872,9 @@
             )).catch(Promise.CancellationError, (function() {}
             ))
         }
-        function x(e) {//::: Parser
+        function x(e) {
             var t, n, a, r = e.data;
             if (r instanceof ArrayBuffer) {
-                //Split tag and Data by comma ascii 44
                 for (var i, o = [], c = new f.default(r); 44 !== (i = c.readUint8()); )
                     o.push(i);
                 t = String.fromCharCode.apply(String, o),
@@ -36519,7 +36511,6 @@
                 }
                 ,
                 this.socket = a
-                console.log('SOCKET OPEN', a)
             }
             )).cancellable().catch((function(e) {
                 if (LOG(2)(A(), this.id, e),
@@ -36901,7 +36892,6 @@
                         void (this.onactivity && this.onactivity())
                     }
                     var a = this.msgParser(e);
-
                     this.onactivity && this.onactivity(a),
                     this._onParsedMsg(a)
                 }
@@ -36960,7 +36950,6 @@
                 key: "releaseMessages",
                 value: function(e) {
                     var t = this;
-                    console.log('releaseMessages',e,new Error())
                     if (this.isQueueing) {
                         var n = this.messageQueue;
                         this.set({
@@ -39489,7 +39478,7 @@
                             e.postMessage({
                                 action: n,
                                 message: a,
-                                version: "2.2019.6"
+                                version: "2.2019.8"
                             }, [r.port2])
                         }
                         ))
@@ -42273,7 +42262,6 @@
                   , v = a || new t
                   , E = 0
                   , y = f[0];
-                  // protobuf
                 for (; n.size(); ) {
                     var T = l(n, 0, 4294967296, "field and enc type")
                       , S = 7 & T
@@ -56176,14 +56164,14 @@
                 MAC: "mac os",
                 CHROMEOS: "chromium os"
             },
-            LATEST_HASH: "2c59cf7add1a3f75725e582a2b471414493092ee",
+            LATEST_HASH: "7a76ae7183adf2c40b23643fd035e642aa7ed315",
             VERSION: {
                 p: Number("2"),
                 s: Number("2019"),
-                t: Number("6")
+                t: Number("8")
             },
-            VERSION_BASE: "2.2019.6",
-            VERSION_STR: "2.2019.6",
+            VERSION_BASE: "2.2019.8",
+            VERSION_STR: "2.2019.8",
             DYN_ORIGIN: "https://web.whatsapp.com/",
             PP_URL: "https://web.whatsapp.com/pp",
             LOGOUT_URL: "https://web.whatsapp.com/logout",
