@@ -8,12 +8,6 @@
     "strict": false,
     "noImplicitThis": true,
     "esModuleInterop": true,
-    "baseUrl": ".",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
     "forceConsistentCasingInFileNames": true
   },
   "include": [
