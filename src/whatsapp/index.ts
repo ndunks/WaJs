@@ -28,15 +28,13 @@ class WhatsApp extends EventEmitter {
         )
     }
     private watchdog = () => {
-        this.client.ws.sendRaw('?,,', (e) => {
-            if (e) {
-                this.keepAliveTimer = null
-                E('Watchdog fail')
-                this.close()
-            } else {
-                this.keepAliveTimer = setTimeout(this.watchdog, 30000)
-                L(Color.y('>>'), Color.g('watchdog ok'))
-            }
+        // ?,,
+        this.client.ws.send(',', 'watchdog', '?').then((e) => {
+            this.keepAliveTimer = setTimeout(this.watchdog, 30000)
+        }).catch(e => {
+            this.keepAliveTimer = null
+            E('Watchdog fail')
+            this.close()
         })
 
     }

@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { WhatsAppCmdType, WhatsAppCmdAction, WhatsAppClientConfig } from "./interfaces";
+import { WhatsAppCmdType, WhatsAppCmdAction, WhatsAppClientConfig, WANode } from "./interfaces";
 import { EventEmitter } from "events";
 import { Color } from "../utils";
 import { commandTagHandlers, AsyncTagHandler } from "./handler";
@@ -42,7 +42,7 @@ export class WASocket {
             }
 
             logs.push(Color.g(id))
-            let parsed = null;
+            let parsed: WANode = null;
             if (message instanceof Buffer) {
                 logs.push(Color.b('BIN'))
                 try {
@@ -50,7 +50,7 @@ export class WASocket {
                     parsed = readNode(new BufferReader(new BinaryBuffer(message)))
                 } catch (error) {
                     logs.push(Color.r(error))
-                    parsed = []
+                    parsed = ['FAIL']
                 }
             } else if (message) {
                 if (message.length && (message[0] == '[' || message[0] == '{')) {
@@ -88,7 +88,7 @@ export class WASocket {
                     handle = commandTagHandlers.get(id)
                     commandTagHandlers.delete(id)
                 } else if (!emitEvents) {
-                    logs.push(Color.r('[unhandled]'), parsed[0])
+                    logs.push(Color.r('[unhandled]'), parsed[0] || parsed)
                 }
             }
             L.apply(undefined, logs)
@@ -129,7 +129,7 @@ export class WASocket {
                     message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
                 }
                 commandTagHandlers.set(tag, { sentMessage: message, callback: resolve, hint })
-                L(Color.y('>>'), tag, hint)
+                L(Color.y('>> ' + tag), hint)
                 this.sock.send(message, err => err ? reject(err) : null)
             }
         )
