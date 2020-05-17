@@ -7,26 +7,34 @@ import { hmacDecrypt, hmacEncrypt } from "./secure";
 import { readNode } from "./binary/reader";
 import BufferReader from "./binary/buffer-reader";
 import BinaryBuffer from "./binary/buffer";
+import WhatsApp from ".";
 
 export class WASocket {
     private messageConter: number = 0
-
     public sock: WebSocket
     private shortTagBase: string = `${Math.floor(Date.now() / 1000) % 1000}`
+    /** For detection iddle time after initial setup */
+    public lastReceived: number
+    private waitInitialized: NodeJS.Timer
+    private watchdogTimer: NodeJS.Timer
 
-    constructor(private event: EventEmitter, private config: WhatsAppClientConfig
+    constructor(private wa: WhatsApp, private config: WhatsAppClientConfig
     ) {
 
         this.sock = new WebSocket("wss://web.whatsapp.com/ws", {
             origin: "https://web.whatsapp.com",
         })
-        this.sock.on('error', (...args) => event.emit('error', ...args))
-        this.sock.on('close', (...args) => event.emit('close', ...args))
-        this.sock.on('open', (...args) => event.emit('open', ...args))
+        this.sock.on('error', (...args) => wa.emit('error', ...args))
+        this.sock.on('open', (...args) => wa.emit('open', ...args))
+        this.sock.on('close', (...args) => {
+            this.stopWatchdog()
+            wa.emit('close', ...args)
+        })
         this.sock.on('message', (data: string | Buffer) => {
             let firstCommaPos = data.indexOf(',');
             let id: string;
             let message: string | Buffer;
+            this.lastReceived = Date.now()
             const logs: any[] = [Color.g("<<")]
             if (firstCommaPos < 0) {
                 if (typeof data == 'string') {
@@ -100,6 +108,22 @@ export class WASocket {
                     if (id.indexOf('preempt') === 0) {
                         logs.push(parsed[1] && parsed[1].type || '???')
                         emitEvents = ['preempt', parsed]
+                        if (!this.waitInitialized) {
+                            this.waitInitialized = setInterval(
+                                () => {
+                                    if ((Date.now() - this.lastReceived) < 700)
+                                        return // Not now
+
+                                    clearInterval(this.waitInitialized)
+                                    delete this.waitInitialized
+                                    L(Color.y('INITIALIZED'))
+                                    this.watchdogTimer = setInterval(this.watchdog, 5000)
+                                    this.wa.emit('initialized')
+
+                                },
+                                700
+                            )
+                        }
                     } else {
                         // I dont know to handle it
                         logs.push(Color.r('Prefixed with p but not preempt!'))
@@ -109,9 +133,9 @@ export class WASocket {
 
             if (emitEvents) {
                 // insert event name on logs
-                logs.splice(logsPos - 1, 0, Color.m(`[emit:${emitEvents[0]}]`))
+                logs.splice(logsPos, 0, Color.m(`[E:${emitEvents[0]}]`))
                 L(...logs)
-                this.event.emit.apply(this.event, emitEvents)
+                this.wa.emit.apply(this.wa, emitEvents)
                 // Just emit the event
                 return
             }
@@ -125,7 +149,7 @@ export class WASocket {
                             logs.push(Color.r('no binaryDataHandler!'), cmd)
                         } else {
                             L(...logs)
-                            binaryDataHandler[cmd].apply(this.event, parsed)
+                            binaryDataHandler[cmd].apply(this.wa, parsed)
                             // Handled
                             return;
                         }
@@ -141,6 +165,28 @@ export class WASocket {
         })
 
     }
+
+    private watchdog = () => {
+        if (Date.now() - this.lastReceived < 20000) {
+            return;// not now
+        }
+        // Send keep alive
+        this.sock.send('?,,', (e) => {
+            if (e) {
+                E('Watchdog fail')
+                this.stopWatchdog()
+            } else {
+                L(Color.y('>> watchdog ?,,'))
+            }
+        })
+    }
+    private stopWatchdog = () => {
+        if (this.watchdogTimer) {
+            clearInterval(this.watchdogTimer)
+            this.watchdogTimer = null
+        }
+    }
+
     sendRaw(data, cb: (err?: Error) => void) {
         return this.sock.send(data, cb)
     }

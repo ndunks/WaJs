@@ -4,47 +4,23 @@ import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
     BinAttrChat, BinAttrUser
 } from "./interfaces";
+import { Color } from "../utils";
 
 class WhatsApp extends EventEmitter {
     client: Client
     chats: BinAttrChat[] = []
     contacts: BinAttrUser[] = []
-    private keepAliveTimer: NodeJS.Timeout
 
     constructor(authFile = '.auth') {
         super()
         this.client = new Client(authFile, this)
     }
-    connect() {
-        return this.client.connect().then(
-            info => {
-                this.keepAliveTimer = setTimeout(() => {
-                    this.watchdog()
-                }, 10000)
-                this.once('close', () => {
-                    if (this.keepAliveTimer) {
-                        clearTimeout(this.keepAliveTimer)
-                        this.keepAliveTimer = null
-                    }
-                })
-                return info
-            }
-        )
-    }
-    private watchdog = () => {
-        // ?,,
-        this.client.ws.send(',', 'watchdog', '?').then((e) => {
-            this.keepAliveTimer = setTimeout(this.watchdog, 30000)
-        }).catch(e => {
-            this.keepAliveTimer = null
-            E('Watchdog fail')
-            this.close()
-        })
 
+    connect() {
+        return this.client.connect()
     }
 
     close() {
-        if (this.keepAliveTimer) clearTimeout(this.keepAliveTimer)
         this.client.ws.send('goodbye,,["admin","Conn","disconnect"]')
         this.client.close()
     }
@@ -56,6 +32,9 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
      * if kind 'replaced' then replaced event also emitted
      */
     on(event: string, listener: (...args: any[]) => void): this;
+    on(event: 'open', listener: () => void): this;
+    /** After login and received some initial data from server */
+    on(event: 'initialized', listener: () => void): this;
     on(event: 'disconnect', listener: (kind: 'replaced') => void): this;
     /** Login in another web.whatsapp */
     on(event: 'replaced', listener: () => void): this;

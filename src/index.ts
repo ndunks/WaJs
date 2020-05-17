@@ -13,6 +13,9 @@ wa.connect().then(
     }
 ).catch(err => console.error(err))
 
+wa.on('initialized', () => {
+    L('::initialized', wa.contacts.length, wa.chats.length)
+})
 wa.on('Msg', (data) => {
     L(Color.m('::'), 'Msg', data)
 })

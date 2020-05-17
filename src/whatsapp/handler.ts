@@ -30,6 +30,7 @@ export const binaryDataHandler: { [name in BinNodeTags]?: (this: WhatsApp, attr:
     },
     user(attr: BinAttrUser, childs) {
         this.contacts.push(attr)
+        L('new Contact', attr)
     },
     chat(attr: BinAttrChat, childs) {
         this.chats.push(attr)
