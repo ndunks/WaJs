@@ -5,6 +5,7 @@ import BufferReader from "./buffer-reader";
 import Wid from "../wid/wid";
 import WidFactory from "../wid/wid-factory";
 import { Color } from "../../utils";
+import { WANode } from "../interfaces";
 
 
 function tryMakeWid(str: string) {
@@ -75,7 +76,7 @@ export function readString(buf: BufferReader, tag: BinaryTag, autoCreateWid = tr
     }
 }
 export function readList(buf: BufferReader, byteTag: BinaryTag) {
-    let list = []
+    let list: WANode[] = []
     let size = readListSize(buf, byteTag)
     for (let i = 0; i < size; i++) {
         try {
@@ -157,7 +158,7 @@ export function getTokenDouble(no: number, len: number) {
     return a
 }
 
-export function readNode(buf: BufferReader) {
+export function readNode(buf: BufferReader): WANode {
     let byteTag = buf.readByte()
     const listSize = readListSize(buf, byteTag)
     byteTag = buf.readByte();
@@ -172,14 +173,12 @@ export function readNode(buf: BufferReader) {
     let attrSize = listSize - 2 + listSize % 2 >> 1;
     let attr: { [key: string]: string } = readAttributes(buf, attrSize);
     if (listSize % 2 == 1) {
-        //L('reader: readNode', tag, 'NO DATA', BinaryTag[byteTag]);
-        return { tag, attr }
+        return [tag, attr, undefined]
     }
 
     let child;
 
     byteTag = buf.readByte()
-    //L(`reader: readNode[${buf.index}]`, tag, 'Data', byteTag, BinaryTag[byteTag]);
     if (isListTag(byteTag)) {
         child = readList(buf, byteTag);
     } else if (byteTag === BinaryTag.BINARY_8) {
@@ -193,7 +192,7 @@ export function readNode(buf: BufferReader) {
         child = buf.readBytes(l)
     } else
         child = readString(buf, byteTag);
-    return { tag, attr, child }
+    return [tag, attr, child]
 }
 export function isListTag(tag: number) {
     return tag === BinaryTag.LIST_EMPTY || tag === BinaryTag.LIST_8 || tag === BinaryTag.LIST_16

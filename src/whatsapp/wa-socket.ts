@@ -4,6 +4,9 @@ import { EventEmitter } from "events";
 import { Color } from "../utils";
 import { commandTagHandlers, AsyncTagHandler } from "./handler";
 import { hmacDecrypt, hmacEncrypt } from "./secure";
+import { readNode } from "./binary/reader";
+import BufferReader from "./binary/buffer-reader";
+import BinaryBuffer from "./binary/buffer";
 
 export class WASocket {
     private messageConter: number = 0
@@ -21,69 +24,71 @@ export class WASocket {
         this.sock.on('open', (...args) => event.emit('open', ...args))
         this.sock.on('message', (data: string | Buffer) => {
             let firstCommaPos = data.indexOf(',');
-            let tag: string;
+            let id: string;
             let message: string | Buffer;
             const logs: any[] = [Color.g("<<")]
             if (firstCommaPos < 0) {
                 if (typeof data == 'string') {
-                    tag = data
+                    id = data
                     message = ''
                 } else {
-                    tag = ''
+                    id = ''
                     message = data
                     logs.push(Color.r('no tag'))
                 }
             } else {
-                tag = data.slice(0, firstCommaPos).toString('ascii')
+                id = data.slice(0, firstCommaPos).toString('ascii')
                 message = data.slice(firstCommaPos + 1)
             }
 
-            logs.push(tag)
+            logs.push(Color.g(id))
+            let parsed = null;
             if (message instanceof Buffer) {
                 logs.push(Color.b('BIN'))
                 try {
                     message = hmacDecrypt(this.config.aesKey, this.config.macKey, message)
+                    parsed = readNode(new BufferReader(new BinaryBuffer(message)))
                 } catch (error) {
                     logs.push(Color.r(error))
-                    message = ''
+                    parsed = []
                 }
-            } else if (message.length && (message[0] == '[' || message[0] == '{')) {
-                logs.push(Color.b('JSON'))
-                message = JSON.parse(message)
-            }
+            } else if (message) {
+                if (message.length && (message[0] == '[' || message[0] == '{')) {
+                    logs.push(Color.b('JSON'))
+                    parsed = JSON.parse(message)
+                } else {
+                    logs.push(Color.r('(!) Cannot parse'))
+                }
+            } else logs.push(Color.m('[no data]'))
             let emitEvents: any[];
             let handle: AsyncTagHandler;
 
-            switch (tag[0]) {
+            switch (id[0]) {
                 case '!':
-                    let ts = parseInt(tag.slice(1))
+                    let ts = parseInt(id.slice(1))
                     logs.push('[timeskew]');
-                    emitEvents = ['timeskew', ts, message]
+                    emitEvents = ['timeskew', ts, parsed]
                     break;
 
                 case 's':
-                    if (message instanceof Buffer) {
-                        logs.push(Color.r('(!) Binary server message'), message.length)
-                    } else if (typeof message == 'object') {
-                        const params: any[] = message as any
-                        logs.push(Color.b('[server-message]'))
-                        emitEvents = ['server-message', params.shift(), params]
+                    if (Array.isArray(parsed)) {
+                        const cmd = parsed.shift()
+                        logs.push(Color.b('[server-message]'), Color.g(cmd))
+                        emitEvents = ['server-message', cmd, parsed]
                     } else {
-                        logs.push(Color.r('(!) Not object server message'), message)
+                        logs.push(Color.r('(!) Not array'), parsed)
                     }
                     break;
             }
 
             // Check for async handler that waiting thats tag
-            if (tag) {
-                if (commandTagHandlers.has(tag)) {
+            if (id) {
+                if (commandTagHandlers.has(id)) {
                     logs.push(Color.g('[handled]'))
-                    handle = commandTagHandlers.get(tag)
-                    commandTagHandlers.delete(tag)
+                    handle = commandTagHandlers.get(id)
+                    commandTagHandlers.delete(id)
                 } else if (!emitEvents) {
-                    logs.push(Color.r('[unhandled]'))
-                    if (typeof message != 'string' && !(message instanceof Buffer))
-                        logs.push(message)
+                    logs.push(Color.r('[unhandled]'), parsed[0])
                 }
             }
             L.apply(undefined, logs)
@@ -92,8 +97,8 @@ export class WASocket {
             }
             if (handle) {
                 try {
-                    handle.tag = tag
-                    handle.callback.call(handle, message)
+                    handle.tag = id
+                    handle.callback.call(handle, parsed)
                 } catch (error) {
                     E('callback error', error)
                 }

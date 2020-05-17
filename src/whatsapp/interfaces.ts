@@ -141,3 +141,5 @@ export interface DataPresence {
     t: number
     deny: boolean
 }
+
+export type WANode = [string, { [key: string]: string }, any]
