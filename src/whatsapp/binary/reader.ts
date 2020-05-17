@@ -141,16 +141,19 @@ export function readListSize(buf: BufferReader, tag: BinaryTag): number {
 
 export function getToken(no: number) {
     if (no < 3 || no >= Dictionary.singleByte.length) {
-        throw new Error("Undefined Byte Token: " + no)
+        E(Color.r("Miss sungle byte token"), no);
+        return `sunglebyte_${no}`
     }
     return Dictionary.singleByte[no]
 }
 
-export function getTokenDouble(tag: number, len: number) {
-    var a, n = 256 * len + tag;
+export function getTokenDouble(no: number, len: number) {
+    var a, n = 256 * len + no;
     if (n >= 0 && n < Dictionary.doubleByte.length && (a = Dictionary.doubleByte[n]),
-        void 0 === a)
-        throw new Error("invalid double byte token " + len + " " + tag);
+        void 0 === a) {
+        E(Color.r("Miss double byte token"), len, no);
+        return `doublebyte_${no}_${len}`
+    }
     return a
 }
 
