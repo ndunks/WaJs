@@ -2,7 +2,7 @@ import { randomBytes, createHmac } from "crypto";
 import { arch, platform } from "os";
 import {
     CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg,
-    WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig
+    WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig, PreemptMessage, BinNodeUser, BinNodeChat, BinNodeResponseContacts, BinNodeResponseChat, BinNodeAttrChat, BinNodeAttrUser
 } from "./interfaces";
 import * as fs from 'fs'
 import { configLoad, configStore, Color } from "../utils";
@@ -38,8 +38,28 @@ export default class Client {
 
     private messageConter: number = 0
     protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void
+    /** Internal command handler */
+    private serverCmdHandlers = {
+        disconnect: (args) => {
+            this.wa.emit('disconnect', args.kind)
+            if (args.kind == 'replaced') {
+                this.wa.emit('replaced')
+            }
+        },
+        challenge: (args: WhatsAppServerMsgCmdChallenge) => {
+            L('Handling challenge');
+            const signed = this.sign(Buffer.from(args.challenge, 'base64'))
+            return this.ws.sendCmd('admin', 'challenge',
+                signed.toString('base64'),
+                this.config.tokens.server,
+                this.config.clientId)
+                .then(
+                    res => L('Chalenge response', res)
+                )
+        }
+    }
 
-    constructor(private authFile = '.auth', private event: WhatsApp) {
+    constructor(private authFile = '.auth', private wa: WhatsApp) {
         if (fs.existsSync(authFile)) {
             this.config = configLoad(this.authFile)
         } else {
@@ -55,10 +75,10 @@ export default class Client {
         return new Promise<WhatsAppServerMsgConn>(
             (resolve, reject) => {
 
-                this.ws = new WASocket(this.event, this.config)
+                this.ws = new WASocket(this.wa, this.config, this.handlePreempt)
                 const onOpen = () => {
                     // Swap error listener
-                    this.event.removeListener("error", reject)
+                    this.wa.removeListener("error", reject)
                     // INIT
                     this.ws.sendCmd<CmdInitResponse>('admin', 'init',
                         this.version.split('.').map(v => parseInt(v)),
@@ -93,9 +113,9 @@ export default class Client {
                 }
 
                 // Fail on early error
-                this.event.once("error", reject)
-                this.event.once("open", onOpen)
-                this.event.on("server-message", this.handleServerMessage.bind(this))
+                this.wa.once("error", reject)
+                this.wa.once("open", onOpen)
+                this.wa.on("server-message", this.handleServerMessage.bind(this))
             }
         )
     }
@@ -134,7 +154,7 @@ export default class Client {
             case 'Blocklist':
             case 'Presence':
             case 'Msg':
-                return this.event.emit(cmd, params[0])
+                return this.wa.emit(cmd, params[0])
             case 'Cmd':
                 const args = params[0] as WhatsAppServerMsgCmd
                 if (this.serverCmdHandlers[args.type]) {
@@ -153,26 +173,33 @@ export default class Client {
                 break;
         }
     }
-    /** Internal command handler */
-    private serverCmdHandlers = {
-        disconnect: (args) => {
-            this.event.emit('disconnect', args.kind)
-            if (args.kind == 'replaced') {
-                this.event.emit('replaced')
-            }
-        },
-        challenge: (args: WhatsAppServerMsgCmdChallenge) => {
-            L('Handling challenge');
-            const signed = this.sign(Buffer.from(args.challenge, 'base64'))
-            return this.ws.sendCmd('admin', 'challenge',
-                signed.toString('base64'),
-                this.config.tokens.server,
-                this.config.clientId)
-                .then(
-                    res => L('Chalenge response', res)
-                )
+
+    private handlePreempt = (data: PreemptMessage) => {
+        if (data[0] != 'response') {
+            L(Color.r('handlePreempt: but cmd is'), data[0])
+            return
         }
+        let childs = [];
+        const type = data[1] && data[1].type || ''
+        if (Array.isArray(data[2])) {
+            childs.push(...data[2].map(v => v[1]))
+        }
+        switch (type) {
+            case 'contacts':
+                this.wa.contacts.push(...childs)
+                break;
+            case 'chat':
+                this.wa.chats.push(...childs)
+                this.wa.emit('chats-loaded', childs)
+                break;
+
+            default:
+                L(Color.r('handlePreempt: unknown type'), type)
+                break;
+        }
+
     }
+
     sign(data: Buffer) {
         const sign = createHmac('sha256', this.config.macKey).update(data).digest()
         return Buffer.concat([sign, data])

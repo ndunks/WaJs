@@ -1,3 +1,4 @@
+import Wid from "./wid/wid"
 
 export interface WhatsAppClientConfig {
     /** 16 Byte ID Auto Generated */
@@ -141,5 +142,57 @@ export interface DataPresence {
     t: number
     deny: boolean
 }
+export interface BinAttr {
+    [key: string]: string
+}
 
-export type WANode = [string, { [key: string]: string }?, any?]
+/** Can be encrypted (bin) or not encrypted */
+export type WANode = [string, (string | BinAttr | any)?, any?]
+
+export interface BinNode extends WANode {
+    /** known types */
+    0: 'response' | 'action' | 'user' | 'chat'
+    /** Attributes */
+    1: BinAttr
+    /** Childs */
+    2?: BinNode[]
+}
+/** Known response types */
+export interface BinNodeResponseAttr extends BinAttr {
+    type: 'contacts' | 'chat'
+}
+
+export interface BinNodeResponseAttrContacts extends BinNodeResponseAttr {
+    type: 'contacts'
+    checksum: string
+}
+
+export interface BinNodeResponseAttrChat extends BinNodeResponseAttr {
+    type: 'chat'
+    /** its a number */
+    status: string
+}
+
+export type BinNodeResponse = BinNode & ['response', BinNodeResponseAttr]
+export type BinNodeResponseContacts = BinNodeResponse & [BinNodeResponseAttrContacts, BinNodeUser[]]
+export type BinNodeResponseChat = BinNodeResponse & [BinNodeResponseAttrChat, BinNodeChat[]]
+
+export type BinNodeUser = BinNode & ['user', BinNodeAttrUser, undefined]
+export type BinNodeChat = BinNode & ['chat', BinNodeAttrChat, undefined]
+
+export type PreemptMessage = BinNodeResponseContacts | BinNodeResponseChat
+
+export interface BinNodeAttrChat {
+    t: string // '1588913596'
+    count: string // '0'
+    spam: string // 'false'
+    jid: Wid
+    modify_tag: string // '481019'
+    name: string
+}
+
+export interface BinNodeAttrUser {
+    /** pushname */
+    notify: string,
+    jid: Wid
+}

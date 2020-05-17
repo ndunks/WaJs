@@ -1,10 +1,14 @@
 import Client from "./client";
 import { EventEmitter } from "events";
-import { WhatsAppServerMsg, DataMsgTypes, DataPresence } from "./interfaces";
-import { Color } from "../utils";
+import {
+    WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
+    BinNodeAttrChat, BinNodeAttrUser
+} from "./interfaces";
 
 class WhatsApp extends EventEmitter {
     client: Client
+    chats: BinNodeAttrChat[] = []
+    contacts: BinNodeAttrUser[] = []
     private keepAliveTimer: NodeJS.Timeout
 
     constructor(authFile = '.auth') {
@@ -39,18 +43,6 @@ class WhatsApp extends EventEmitter {
 
     }
 
-    getContacts() {
-        return this.client.ws.sendBin(
-            "query",
-            { epoch: "1", kind: undefined, type: "contacts" },
-            undefined,
-            "getContacts"
-        )
-    }
-
-    state() {
-
-    }
     close() {
         if (this.keepAliveTimer) clearTimeout(this.keepAliveTimer)
         this.client.ws.send('goodbye,,["admin","Conn","disconnect"]')
@@ -74,8 +66,11 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     //on(event: 'message', listener: (tag: string, data: Buffer | string) => void): this;
     /** Got server message, 's' prefixed eg s1, s2, s3 */
     on(event: 'server-message', listener: (cmd: WhatsAppServerMsg, data: Array<any> | Object) => void): this;
+    /** On preempt chats received */
+    on(event: 'chats-loaded', listener: (chats: BinNodeAttrChat[]) => void): this;
     /** '!' prefixed */
     on(event: 'timeskew', listener: (ts: number, message: null | string | Buffer) => void): this;
+    on(event: 'preempt', listener: (data: PreemptMessage) => void): this;
     on(event: 'Stream', listener: (data: any) => void): this;
     on(event: 'Props', listener: (data: any) => void): this;
     on(event: 'Blocklist', listener: (data: any) => void): this;

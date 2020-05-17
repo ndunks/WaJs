@@ -1,5 +1,5 @@
 import WebSocket from "ws";
-import { WhatsAppCmdType, WhatsAppCmdAction, WhatsAppClientConfig, WANode } from "./interfaces";
+import { WhatsAppCmdType, WhatsAppCmdAction, WhatsAppClientConfig, WANode, PreemptMessage } from "./interfaces";
 import { EventEmitter } from "events";
 import { Color } from "../utils";
 import { commandTagHandlers, AsyncTagHandler } from "./handler";
@@ -14,7 +14,10 @@ export class WASocket {
     public sock: WebSocket
     private shortTagBase: string = `${Math.floor(Date.now() / 1000) % 1000}`
 
-    constructor(private event: EventEmitter, private config: WhatsAppClientConfig) {
+    constructor(private event: EventEmitter,
+        private config: WhatsAppClientConfig,
+        private handlePreempt: Function
+    ) {
 
         this.sock = new WebSocket("wss://web.whatsapp.com/ws", {
             origin: "https://web.whatsapp.com",
@@ -62,6 +65,7 @@ export class WASocket {
             } else logs.push(Color.m('[no data]'))
             let emitEvents: any[];
             let handle: AsyncTagHandler;
+            let callback: Function;
 
             switch (id[0]) {
                 case '!':
@@ -73,12 +77,18 @@ export class WASocket {
                 case 's':
                     if (Array.isArray(parsed)) {
                         const cmd = parsed.shift()
-                        logs.push(Color.b('[server-message]'), Color.g(cmd))
+                        logs.push(Color.m('[E:server-message]'), Color.g(cmd))
                         emitEvents = ['server-message', cmd, parsed]
                     } else {
                         logs.push(Color.r('(!) Not array'), parsed)
                     }
                     break;
+                default:
+                    if (id.indexOf('preempt') === 0) {
+                        logs.push(Color.m('[E:preempt]'), parsed[1] && parsed[1].type || '???')
+                        emitEvents = ['preempt', parsed]
+                        callback = this.handlePreempt
+                    }
             }
 
             // Check for async handler that waiting thats tag
@@ -88,7 +98,13 @@ export class WASocket {
                     handle = commandTagHandlers.get(id)
                     commandTagHandlers.delete(id)
                 } else if (!emitEvents) {
-                    logs.push(Color.r('[unhandled]'), parsed[0] || parsed)
+                    if (parsed[0]) {
+                        logs.push(Color.m('E:' + parsed[0]))
+                        emitEvents = [parsed[0], parsed[1], parsed[2], id]
+                    }
+                    else {
+                        logs.push(Color.r('[unhandled]'), parsed[0] || parsed)
+                    }
                 }
             }
             L.apply(undefined, logs)
@@ -102,6 +118,9 @@ export class WASocket {
                 } catch (error) {
                     E('callback error', error)
                 }
+            }
+            if (callback) {
+                callback.call(undefined, parsed)
             }
         })
 

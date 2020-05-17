@@ -36,3 +36,7 @@ wa.on('timeskew', (ts) => {
 wa.on('close', (code, reason) => {
     L(Color.m('::'), 'close', code, reason)
 })
+wa.on('chats-loaded', chats => {
+    console.log('::chats-loaded', chats[0], chats[chats.length - 1]);
+
+})
