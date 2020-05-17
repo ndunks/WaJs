@@ -10,13 +10,6 @@ wa.connect().then(
             info.phone.device_manufacturer,
             info.phone.device_model
         );
-        setTimeout(() => {
-            wa.getContacts().then(
-                contacts => {
-                    console.log('Contacts', contacts)
-                }
-            )
-        }, 2000)
     }
 ).catch(err => console.error(err))
 
