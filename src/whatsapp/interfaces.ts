@@ -150,12 +150,15 @@ export interface DataPresence {
     deny: boolean
 }
 export interface BinAttr {
-    [key: string]: any 
+    [key: string]: any
 }
 
 /** Can be encrypted (bin) or not encrypted */
 export type WANode = [string, (string | BinAttr | any)?, any?]
-export type BinNodeTags = 'response' | 'action' | 'user' | 'chat'
+
+export type BinNodeTags = 'response' | 'action' | 'user' | 'chat' | 'message' | 'groups_v2' | 'broadcast' | 'notification' | 'call_log' | 'security'
+
+/** Binary node after decrypted and parsed */
 export interface BinNode extends WANode {
     /** known types */
     0: BinNodeTags
@@ -189,7 +192,7 @@ export type BinNodeChat = BinNode & ['chat', BinAttrChat, undefined]
 
 export type PreemptMessage = BinNodeResponseContacts | BinNodeResponseChat
 
-export interface BinAttrChat  extends BinAttr {
+export interface BinAttrChat extends BinAttr {
     t: string // '1588913596'
     count: string // '0'
     spam: string // 'false'
@@ -198,7 +201,7 @@ export interface BinAttrChat  extends BinAttr {
     name: string
 }
 
-export interface BinAttrUser  extends BinAttr {
+export interface BinAttrUser extends BinAttr {
     /** pushname */
     notify: string,
     jid: Wid

@@ -5,13 +5,12 @@ import BufferReader from "../whatsapp/binary/buffer-reader";
 import assert from "assert";
 import "../whatsapp_pb"
 import { WANode } from "../whatsapp/interfaces";
+import { handleActionMsg, getRecentChats } from "../messages";
 
-// jspb.Message.deserializeBinaryFromReader()
-
-// console.log(new proto.proto.Message())
 
 const dir = `etc/binary-sample`
 /** Message sent after preempt is contain chats */
+let addlastLength = 0;
 const files = fs.readdirSync(dir).filter(v => !v.match(/^preempt/))
 for (const file of files) {
     const nodeBuffer = fs.readFileSync(`${dir}/${file}`)
@@ -26,9 +25,13 @@ for (const file of files) {
     assert.equal(result[0], 'action')
     assert.ok(result[1])
     assert.strictEqual(Array.isArray(result[2]), true)
-    for (const msg of result[2]) {
-        const obj: any = proto.proto.WebMessageInfo.deserializeBinary(msg.child).toObject()
-        assert.ok(obj)
-        assert.ok(obj.key)
+    assert.doesNotThrow(() => {
+        handleActionMsg(result[1], result[2])
+    })
+    if (result[1].add == 'last') {
+        addlastLength += result[2].length
     }
 }
+
+const recents = getRecentChats()
+assert.equal(addlastLength, recents.length)

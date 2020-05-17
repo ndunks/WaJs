@@ -198,9 +198,6 @@ export function isListTag(tag: number) {
     return tag === BinaryTag.LIST_EMPTY || tag === BinaryTag.LIST_8 || tag === BinaryTag.LIST_16
 }
 export function readAttributes(buf: BufferReader, len: number): { [key: string]: string } {
-
-    if (!len) return undefined
-
     buf.READING_ATTR_FLAG = true
     //L("Read Attr", len)
 
