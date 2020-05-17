@@ -1,13 +1,17 @@
 import WebSocket from "ws";
-import { WhatsAppCmdType, WhatsAppCmdAction, WhatsAppClientConfig, WANode, PreemptMessage } from "./interfaces";
-import { EventEmitter } from "events";
+import {
+    WhatsAppCmdType, WhatsAppCmdAction, WhatsAppClientConfig,
+    WANode, BinNode, AsyncTagHandler
+} from "./interfaces";
 import { Color } from "../utils";
-import { commandTagHandlers, AsyncTagHandler, binaryDataHandler } from "./handler";
 import { hmacDecrypt, hmacEncrypt } from "./secure";
 import { readNode } from "./binary/reader";
 import BufferReader from "./binary/buffer-reader";
 import BinaryBuffer from "./binary/buffer";
 import WhatsApp from ".";
+
+/** Dynamic handler form promise */
+export const commandTagHandlers = new Map<String, AsyncTagHandler>()
 
 export class WASocket {
     private messageConter: number = 0
@@ -69,7 +73,7 @@ export class WASocket {
                 } else {
                     logs.push(Color.r('(!) Cannot parse'))
                 }
-            } else logs.push(Color.m('[no data]'))
+            } else logs.push(Color.b('NULL'))
 
             if (commandTagHandlers.has(id)) {
                 logs.push(Color.g('[handled]'))
@@ -141,18 +145,13 @@ export class WASocket {
             }
             if (id.match(/^\d+-\d+$/)) {
                 if (Array.isArray(parsed)) {
-                    let cmd = parsed.shift()
-                    if (!cmd) {
+                    if (!parsed[0]) {
                         logs.push(Color.r('node with empty cmd!'), parsed)
                     } else {
-                        if ('undefined' == typeof binaryDataHandler[cmd]) {
-                            logs.push(Color.r('no binaryDataHandler!'), cmd)
-                        } else {
-                            L(...logs)
-                            binaryDataHandler[cmd].apply(this.wa, parsed)
-                            // Handled
-                            return;
-                        }
+                        L(...logs)
+                        this.wa.binaryHandle(parsed as BinNode)
+                        // Handled
+                        return;
                     }
                 } else {
                     logs.push(Color.r('BinData not array!'), parsed.constructor && parsed.constructor.name || parsed)

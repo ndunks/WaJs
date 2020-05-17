@@ -2,8 +2,7 @@ import { randomBytes, createHmac } from "crypto";
 import { arch, platform } from "os";
 import {
     CmdInitResponse, WhatsAppServerMsg,
-    WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig,
-    PreemptMessage} from "./interfaces";
+    WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig} from "./interfaces";
 import * as fs from 'fs'
 import { configLoad, configStore, Color } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys } from "./secure";

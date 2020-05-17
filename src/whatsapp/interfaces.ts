@@ -23,7 +23,14 @@ export interface WhatsAppClientConfig {
         browser: string
     }
 }
-
+export interface AsyncTagHandler {
+    /** Auto assign if sent */
+    tag?: string
+    sentMessage: String | Buffer
+    callback: (this: AsyncTagHandler, message: string | Buffer | any) => void
+    /** Logging purpose */
+    hint?: string
+}
 export type WhatsAppCmdType = 'admin' | 'query' | string
 export type WhatsAppCmdAction = 'init' | 'Conn' | 'login' | 'challenge' | string
 export type WhatsAppServerMsg = 'Conn' | 'Blocklist' | 'Stream' | 'Props' | 'Cmd' | 'Msg' | 'Presence'

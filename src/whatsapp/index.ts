@@ -2,7 +2,7 @@ import Client from "./client";
 import { EventEmitter } from "events";
 import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
-    BinAttrChat, BinAttrUser
+    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode
 } from "./interfaces";
 import { Color } from "../utils";
 
@@ -14,6 +14,9 @@ class WhatsApp extends EventEmitter {
     constructor(authFile = '.auth') {
         super()
         this.client = new Client(authFile, this)
+        const preemptHandle = parsed => this.binaryHandle(parsed)
+        this.on('preempt', preemptHandle)
+        this.on('initialized', () => this.off('preempt', preemptHandle))
     }
 
     connect() {
@@ -24,6 +27,31 @@ class WhatsApp extends EventEmitter {
         this.client.ws.send('goodbye,,["admin","Conn","disconnect"]')
         this.client.close()
     }
+
+    binaryHandle(parsed: BinNode) {
+        if ('undefined' == typeof this[`binaryHandle_${parsed[0]}`]) {
+            L(Color.r('Missing binaryHandler'), parsed[0])
+        } else {
+            this[`binaryHandle_${parsed.shift()}`](...parsed)
+        }
+    }
+
+    binaryHandle_response(attr: BinAttrResponse, childs) {
+        if (Array.isArray(childs)) {
+            childs.forEach(child => this.binaryHandle(child))
+        } else {
+            L(Color.r("binaryHandle_response: invalid child"), childs)
+        }
+    }
+
+    binaryHandle_user(attr: BinAttrUser, childs) {
+        this.contacts.push(attr)
+    }
+
+    binaryHandle_chat(attr: BinAttrChat, childs) {
+        this.chats.push(attr)
+    }
+
 }
 
 declare interface WhatsApp extends NodeJS.EventEmitter {
