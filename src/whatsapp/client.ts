@@ -1,9 +1,9 @@
 import { randomBytes, createHmac } from "crypto";
 import { arch, platform } from "os";
 import {
-    CmdInitResponse, WhatsAppCmdType, WhatsAppCmdAction, WhatsAppServerMsg,
-    WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig, PreemptMessage, BinNodeUser, BinNodeChat, BinNodeResponseContacts, BinNodeResponseChat, BinNodeAttrChat, BinNodeAttrUser
-} from "./interfaces";
+    CmdInitResponse, WhatsAppServerMsg,
+    WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig,
+    PreemptMessage} from "./interfaces";
 import * as fs from 'fs'
 import { configLoad, configStore, Color } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys } from "./secure";
@@ -36,7 +36,6 @@ export default class Client {
     ws: WASocket
     timeSkew: number
 
-    private messageConter: number = 0
     protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void
     /** Internal command handler */
     private serverCmdHandlers = {
@@ -75,7 +74,7 @@ export default class Client {
         return new Promise<WhatsAppServerMsgConn>(
             (resolve, reject) => {
 
-                this.ws = new WASocket(this.wa, this.config, this.handlePreempt)
+                this.ws = new WASocket(this.wa, this.config )
                 const onOpen = () => {
                     // Swap error listener
                     this.wa.removeListener("error", reject)
@@ -173,33 +172,7 @@ export default class Client {
                 break;
         }
     }
-
-    private handlePreempt = (data: PreemptMessage) => {
-        if (data[0] != 'response') {
-            L(Color.r('handlePreempt: but cmd is'), data[0])
-            return
-        }
-        let childs = [];
-        const type = data[1] && data[1].type || ''
-        if (Array.isArray(data[2])) {
-            childs.push(...data[2].map(v => v[1]))
-        }
-        switch (type) {
-            case 'contacts':
-                this.wa.contacts.push(...childs)
-                break;
-            case 'chat':
-                this.wa.chats.push(...childs)
-                this.wa.emit('chats-loaded', childs)
-                break;
-
-            default:
-                L(Color.r('handlePreempt: unknown type'), type)
-                break;
-        }
-
-    }
-
+    
     sign(data: Buffer) {
         const sign = createHmac('sha256', this.config.macKey).update(data).digest()
         return Buffer.concat([sign, data])

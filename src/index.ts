@@ -40,3 +40,6 @@ wa.on('chats-loaded', chats => {
     console.log('::chats-loaded', chats[0], chats[chats.length - 1]);
 
 })
+wa.on('action', (attr, childs) => {
+    console.log('::action', childs[0]);
+})

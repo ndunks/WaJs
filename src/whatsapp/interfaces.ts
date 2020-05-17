@@ -143,46 +143,46 @@ export interface DataPresence {
     deny: boolean
 }
 export interface BinAttr {
-    [key: string]: string
+    [key: string]: any 
 }
 
 /** Can be encrypted (bin) or not encrypted */
 export type WANode = [string, (string | BinAttr | any)?, any?]
-
+export type BinNodeTags = 'response' | 'action' | 'user' | 'chat'
 export interface BinNode extends WANode {
     /** known types */
-    0: 'response' | 'action' | 'user' | 'chat'
+    0: BinNodeTags
     /** Attributes */
     1: BinAttr
     /** Childs */
     2?: BinNode[]
 }
 /** Known response types */
-export interface BinNodeResponseAttr extends BinAttr {
+export interface BinAttrResponse extends BinAttr {
     type: 'contacts' | 'chat'
 }
 
-export interface BinNodeResponseAttrContacts extends BinNodeResponseAttr {
+export interface BinAttrResponseContacts extends BinAttrResponse {
     type: 'contacts'
     checksum: string
 }
 
-export interface BinNodeResponseAttrChat extends BinNodeResponseAttr {
+export interface BinAttrResponseChat extends BinAttrResponse {
     type: 'chat'
     /** its a number */
     status: string
 }
 
-export type BinNodeResponse = BinNode & ['response', BinNodeResponseAttr]
-export type BinNodeResponseContacts = BinNodeResponse & [BinNodeResponseAttrContacts, BinNodeUser[]]
-export type BinNodeResponseChat = BinNodeResponse & [BinNodeResponseAttrChat, BinNodeChat[]]
+export type BinNodeResponse = BinNode & ['response', BinAttrResponse]
+export type BinNodeResponseContacts = BinNodeResponse & [BinAttrResponseContacts, BinNodeUser[]]
+export type BinNodeResponseChat = BinNodeResponse & [BinAttrResponseChat, BinNodeChat[]]
 
-export type BinNodeUser = BinNode & ['user', BinNodeAttrUser, undefined]
-export type BinNodeChat = BinNode & ['chat', BinNodeAttrChat, undefined]
+export type BinNodeUser = BinNode & ['user', BinAttrUser, undefined]
+export type BinNodeChat = BinNode & ['chat', BinAttrChat, undefined]
 
 export type PreemptMessage = BinNodeResponseContacts | BinNodeResponseChat
 
-export interface BinNodeAttrChat {
+export interface BinAttrChat  extends BinAttr {
     t: string // '1588913596'
     count: string // '0'
     spam: string // 'false'
@@ -191,7 +191,7 @@ export interface BinNodeAttrChat {
     name: string
 }
 
-export interface BinNodeAttrUser {
+export interface BinAttrUser  extends BinAttr {
     /** pushname */
     notify: string,
     jid: Wid

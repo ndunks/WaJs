@@ -2,13 +2,13 @@ import Client from "./client";
 import { EventEmitter } from "events";
 import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
-    BinNodeAttrChat, BinNodeAttrUser
+    BinAttrChat, BinAttrUser
 } from "./interfaces";
 
 class WhatsApp extends EventEmitter {
     client: Client
-    chats: BinNodeAttrChat[] = []
-    contacts: BinNodeAttrUser[] = []
+    chats: BinAttrChat[] = []
+    contacts: BinAttrUser[] = []
     private keepAliveTimer: NodeJS.Timeout
 
     constructor(authFile = '.auth') {
@@ -55,6 +55,7 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
      * its server command, have kind param,
      * if kind 'replaced' then replaced event also emitted
      */
+    on(event: string, listener: (...args: any[]) => void): this;
     on(event: 'disconnect', listener: (kind: 'replaced') => void): this;
     /** Login in another web.whatsapp */
     on(event: 'replaced', listener: () => void): this;
@@ -67,7 +68,7 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     /** Got server message, 's' prefixed eg s1, s2, s3 */
     on(event: 'server-message', listener: (cmd: WhatsAppServerMsg, data: Array<any> | Object) => void): this;
     /** On preempt chats received */
-    on(event: 'chats-loaded', listener: (chats: BinNodeAttrChat[]) => void): this;
+    on(event: 'chats-loaded', listener: (chats: BinAttrChat[]) => void): this;
     /** '!' prefixed */
     on(event: 'timeskew', listener: (ts: number, message: null | string | Buffer) => void): this;
     on(event: 'preempt', listener: (data: PreemptMessage) => void): this;

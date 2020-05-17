@@ -2,7 +2,7 @@ import WebSocket from "ws";
 import { WhatsAppCmdType, WhatsAppCmdAction, WhatsAppClientConfig, WANode, PreemptMessage } from "./interfaces";
 import { EventEmitter } from "events";
 import { Color } from "../utils";
-import { commandTagHandlers, AsyncTagHandler } from "./handler";
+import { commandTagHandlers, AsyncTagHandler, binaryDataHandler } from "./handler";
 import { hmacDecrypt, hmacEncrypt } from "./secure";
 import { readNode } from "./binary/reader";
 import BufferReader from "./binary/buffer-reader";
@@ -14,9 +14,7 @@ export class WASocket {
     public sock: WebSocket
     private shortTagBase: string = `${Math.floor(Date.now() / 1000) % 1000}`
 
-    constructor(private event: EventEmitter,
-        private config: WhatsAppClientConfig,
-        private handlePreempt: Function
+    constructor(private event: EventEmitter, private config: WhatsAppClientConfig
     ) {
 
         this.sock = new WebSocket("wss://web.whatsapp.com/ws", {
@@ -37,7 +35,7 @@ export class WASocket {
                 } else {
                     id = ''
                     message = data
-                    logs.push(Color.r('no tag'))
+                    logs.push(Color.r('no id'))
                 }
             } else {
                 id = data.slice(0, firstCommaPos).toString('ascii')
@@ -45,7 +43,7 @@ export class WASocket {
             }
 
             logs.push(Color.g(id))
-            let parsed: WANode = null;
+            let parsed: WANode | object = null;
             if (message instanceof Buffer) {
                 logs.push(Color.b('BIN'))
                 try {
@@ -53,7 +51,8 @@ export class WASocket {
                     parsed = readNode(new BufferReader(new BinaryBuffer(message)))
                 } catch (error) {
                     logs.push(Color.r(error))
-                    parsed = ['FAIL']
+                    L(...logs)
+                    return;
                 }
             } else if (message) {
                 if (message.length && (message[0] == '[' || message[0] == '{')) {
@@ -63,65 +62,82 @@ export class WASocket {
                     logs.push(Color.r('(!) Cannot parse'))
                 }
             } else logs.push(Color.m('[no data]'))
-            let emitEvents: any[];
-            let handle: AsyncTagHandler;
-            let callback: Function;
 
-            switch (id[0]) {
-                case '!':
-                    let ts = parseInt(id.slice(1))
-                    logs.push('[timeskew]');
-                    emitEvents = ['timeskew', ts, parsed]
-                    break;
-
-                case 's':
-                    if (Array.isArray(parsed)) {
-                        const cmd = parsed.shift()
-                        logs.push(Color.m('[E:server-message]'), Color.g(cmd))
-                        emitEvents = ['server-message', cmd, parsed]
-                    } else {
-                        logs.push(Color.r('(!) Not array'), parsed)
-                    }
-                    break;
-                default:
-                    if (id.indexOf('preempt') === 0) {
-                        logs.push(Color.m('[E:preempt]'), parsed[1] && parsed[1].type || '???')
-                        emitEvents = ['preempt', parsed]
-                        callback = this.handlePreempt
-                    }
-            }
-
-            // Check for async handler that waiting thats tag
-            if (id) {
-                if (commandTagHandlers.has(id)) {
-                    logs.push(Color.g('[handled]'))
-                    handle = commandTagHandlers.get(id)
-                    commandTagHandlers.delete(id)
-                } else if (!emitEvents) {
-                    if (parsed[0]) {
-                        logs.push(Color.m('E:' + parsed[0]))
-                        emitEvents = [parsed[0], parsed[1], parsed[2], id]
-                    }
-                    else {
-                        logs.push(Color.r('[unhandled]'), parsed[0] || parsed)
-                    }
-                }
-            }
-            L.apply(undefined, logs)
-            if (emitEvents) {
-                this.event.emit.apply(this.event, emitEvents)
-            }
-            if (handle) {
+            if (commandTagHandlers.has(id)) {
+                logs.push(Color.g('[handled]'))
+                let handle = commandTagHandlers.get(id)
+                commandTagHandlers.delete(id)
+                L(...logs)
                 try {
                     handle.tag = id
                     handle.callback.call(handle, parsed)
                 } catch (error) {
                     E('callback error', error)
                 }
+                // Stop here, is expected message
+                return
             }
-            if (callback) {
-                callback.call(undefined, parsed)
+
+            let emitEvents: any[];
+            const logsPos = logs.length
+
+            switch (id[0]) {
+                case '!':
+                    let ts = parseInt(id.slice(1))
+                    emitEvents = ['timeskew', ts, parsed]
+                    break;
+
+                case 's':
+                    if (Array.isArray(parsed)) {
+                        const cmd = parsed.shift()
+                        logs.push(cmd)
+                        emitEvents = ['server-message', cmd, parsed]
+                    } else {
+                        logs.push(Color.r('(!) Not array'), parsed)
+                    }
+                    break;
+                case 'p':
+                    if (id.indexOf('preempt') === 0) {
+                        logs.push(parsed[1] && parsed[1].type || '???')
+                        emitEvents = ['preempt', parsed]
+                    } else {
+                        // I dont know to handle it
+                        logs.push(Color.r('Prefixed with p but not preempt!'))
+                    }
+                    break
             }
+
+            if (emitEvents) {
+                // insert event name on logs
+                logs.splice(logsPos - 1, 0, Color.m(`[emit:${emitEvents[0]}]`))
+                L(...logs)
+                this.event.emit.apply(this.event, emitEvents)
+                // Just emit the event
+                return
+            }
+            if (id.match(/^\d+-\d+$/)) {
+                if (Array.isArray(parsed)) {
+                    let cmd = parsed.shift()
+                    if (!cmd) {
+                        logs.push(Color.r('node with empty cmd!'), parsed)
+                    } else {
+                        if ('undefined' == typeof binaryDataHandler[cmd]) {
+                            logs.push(Color.r('no binaryDataHandler!'), cmd)
+                        } else {
+                            L(...logs)
+                            binaryDataHandler[cmd].apply(this.event, parsed)
+                            // Handled
+                            return;
+                        }
+                    }
+                } else {
+                    logs.push(Color.r('BinData not array!'), parsed.constructor && parsed.constructor.name || parsed)
+                }
+            } else {
+                logs.push(Color.r('NO ACTION'))
+            }
+
+            L(...logs)
         })
 
     }
