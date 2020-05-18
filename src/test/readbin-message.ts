@@ -5,7 +5,7 @@ import BufferReader from "../whatsapp/binary/buffer-reader";
 import assert from "assert";
 import "../whatsapp_pb"
 import { WANode } from "../whatsapp/interfaces";
-import { handleActionMsg, getRecentChats } from "../messages";
+import { handleActionMsg, getRecentChats, chats } from "../messages";
 
 
 const dir = `etc/binary-sample`
@@ -35,3 +35,7 @@ for (const file of files) {
 
 const recents = getRecentChats()
 assert.equal(addlastLength, recents.length)
+recents.slice(0, 10).forEach(
+    m => console.log(m.msg.key, m.msg.message)
+)
+fs.writeFileSync('tmp/chats.json', JSON.stringify(chats, null, 2))

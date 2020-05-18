@@ -10,6 +10,7 @@ interface WaChat {
     msg?: any,
     msgs?: any[],
     recent?: boolean
+    [key: string]: any
 }
 
 const chats: WaChat[] = []
@@ -42,15 +43,16 @@ function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             return o
         case "last":
             const d = childs.map(c => parseMsg(c, "last"))
-            let l = {
-                recent: true,
-                meta: attr,
-                //binarySize: t
-            }
 
             for (let f = 0; f < d.length; f++) {
-                l['chat'] = msgGetTarget(d[f]);
+                let l = {
+                    recent: true,
+                    meta: attr,
+                    //binarySize: t
+                }
                 l[msgGetTarget(d[f])] = d[f];
+                //l['chat'] = msgGetTarget(d[f]);
+                l['msg'] = d[f];
                 storeChats([l])
             }
             // (0,

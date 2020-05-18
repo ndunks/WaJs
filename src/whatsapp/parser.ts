@@ -29,16 +29,16 @@ export function parseMsg(node: BinNode, kind: string) {
     switch (node[0]) {
         case 'message':
             return parseMsgMessage(node, kind);
-        // case "groups_v2":
-        //     return parseMsgGp2(node);
-        // case "broadcast":
-        //     return parseMsgBroadcast(node);
-        // case "notification":
-        //     return parseMsgNotification(node);
-        // case "call_log":
-        //     return parseMsgCallLog(node);
-        // case "security":
-        //     return parseMsgSecurity(node);
+        case "groups_v2":
+            throw new Error('Not implemented parseMsgGp2(node)')
+        case "broadcast":
+            throw new Error('Not implemented parseMsgBroadcast(node')
+        case "notification":
+            throw new Error('Not implemented parseMsgNotification(node)')
+        case "call_log":
+            throw new Error('Not implemented parseMsgCallLog(node)')
+        case "security":
+            throw new Error('Not implemented parseMsgSecurity(node)')
         default:
             return L(Color.r("parseMsg: unhandled"), node[0])
     }

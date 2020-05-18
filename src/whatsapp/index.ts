@@ -7,6 +7,7 @@ import {
 import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
+import { handleActionMsg } from "../messages";
 
 class WhatsApp extends EventEmitter {
     client: Client
@@ -55,76 +56,14 @@ class WhatsApp extends EventEmitter {
     }
 
     binaryHandle_action(attr: BinAttrChat, childs) {
-        // fs.writeFileSync(`etc/proto-sample/action-${Date.now()}-add-${attr.add}.bin`, Buffer.from(childs[0][2]))
-        L('action', attr, childs[0])
-        switch (attr.add) {
-            case "relay":
-            case "update":
-               /*  var o = this.parseMsg(n[0], "relay");
-                if (1 !== r && LOG(4)(Ae()),
-                o) {
-                    LOG(2)(Se(), [e, "action", "msg", a.add, o.type, o.from, o.to, o.id, o.author].join(","));
-                    var s = this.msgGetTarget(o);
-                    (0,
-                    v.default)([{
-                        meta: a,
-                        chat: s,
-                        msg: o
-                    }])
-                } else
-                    LOG(4)(_e()); */
-                break;
-            case "last":
-                /* for (var d = [], c = 0; c < r; c++) {
-                    var u = this.parseMsg(n[c], "last");
-                    u ? d.push(u) : LOG(4)(Ee())
-                }
-                if (d.length > 0) {
-                    LOG(2)(ye(), [e, "action", "msg", "last", n.length].join(","));
-                    for (var l = {
-                        recent: !0,
-                        meta: a,
-                        binarySize: t
-                    }, f = 0; f < d.length; f++)
-                        l[this.msgGetTarget(d[f])] = d[f];
-                    (0,
-                    v.default)([l])
-                } else
-                    LOG(4)(je()); */
-                break;
-            case "before":
-            case "after":
-            case "unread":
-                /* if (r > 0) {
-                    for (var h = [], p = 0; p < r; p++) {
-                        var g = this.parseMsg(n[p], a.add);
-                        g ? h.push(g) : LOG(4)(ve())
-                    }
-                    if (h.length > 0) {
-                        var m = this.msgGetTarget(h[0]);
-                        LOG(2)(be(), [e, "action", "msg", a.add, m, h.length].join(",")),
-                        (0,
-                        v.default)([{
-                            meta: a,
-                            chat: m,
-                            msgs: h,
-                            binarySize: t
-                        }])
-                    } else
-                        LOG(4)(me(), a.add)
-                } else
-                    LOG(4)(ge()); */
-                break;
-            default:
-                // LOG(4)(pe())
-            }
+        handleActionMsg(attr, childs)
     }
 
-    binaryHandle_message(attr: BinAttrChat, data) {
-        //const obj: any = proto.proto.Message.deserializeBinary(data).toObject()
+    // binaryHandle_message(attr: BinAttrChat, data) {
+    //     //const obj: any = proto.proto.Message.deserializeBinary(data).toObject()
 
-        //L('message', attr, data)
-    }
+    //     //L('message', attr, data)
+    // }
 
 }
 
