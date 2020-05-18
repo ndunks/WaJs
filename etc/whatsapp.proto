@@ -1,5 +1,5 @@
 syntax = "proto2";
-package proto;
+package wa;
 
 message HydratedQuickReplyButton {
     optional string displayText = 1;

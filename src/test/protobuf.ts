@@ -1,19 +1,16 @@
-import "../whatsapp_pb"
 import * as assert from "assert";
+import { Chat } from "../whatsapp_pb";
 
 const plainObj = {
     id: 'AEDF49F7E5FD1F',
     displayname: 'Sample Display Name'
 }
-const chat = new proto.proto.Chat();
-///@ts-ignore
+
+const chat = new Chat();
 chat.setDisplayname(plainObj.displayname)
-///@ts-ignore
 chat.setId(plainObj.id)
-
 const bin = chat.serializeBinary()
-const chatRead = proto.proto.Chat.deserializeBinary(bin)
-const obj = chatRead.toObject() as any
-
+const chatRead = Chat.deserializeBinary(bin)
+const obj = chatRead.toObject()
 assert.equal(obj.displayname, plainObj.displayname)
 assert.equal(obj.id, plainObj.id)

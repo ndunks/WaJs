@@ -6,6 +6,7 @@ import { Color } from "../utils";
 import { msgGetTarget, storeChats, me } from "../store";
 import MsgKey from "./wid/msg-key";
 import Constant from "./constant";
+import { WebMessageInfo } from "../whatsapp_pb";
 // Refs on app2.{hash}.js search for "handleActionMsg"
 export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
     switch (attr.add) {
@@ -140,7 +141,7 @@ function parseMsgMessage(node: BinNode, kind: string) {
     var child = nodeHelper.children(node);
     if (child instanceof ArrayBuffer)
         try {
-            const parsed = proto.proto.WebMessageInfo.deserializeBinary(Buffer.from(child)).toObject()
+            const parsed = WebMessageInfo.deserializeBinary(Buffer.from(child))
             return parseWebMessageInfo(parsed, kind)
         } catch (t) {
             L('fail parse', t)

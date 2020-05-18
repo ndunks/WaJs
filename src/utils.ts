@@ -1,9 +1,5 @@
 import { readFileSync, writeFileSync } from "fs";
 import { WhatsAppClientConfig } from "./whatsapp/interfaces"
-declare global {
-    var L: typeof console.log;
-    var E: typeof console.error;
-}
 
 ///@ts-ignore
 global.L = console.log
