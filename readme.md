@@ -2,7 +2,16 @@
 
 NodeJS implementation from great research [sigalor/whatsapp-web-reveng](https://github.com/sigalor/whatsapp-web-reveng).
 
-## Start Step
+## TODOs
+
+- [X] Authentication QR Code
+- [X] Resume Session (takeover)
+- [X] Reading initial WS message
+- [ ] Sending Message
+- [ ] Listen when got new message
+- [ ] Get All unread message, read and reply
+
+## Step Explanation
 - First send init command
 - if: have stored `browserToken`, send login command (may got `challenge` command, handle it)
 - else: Generate QR Code from `ref` and `publicKey`
