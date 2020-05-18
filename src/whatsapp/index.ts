@@ -7,7 +7,8 @@ import {
 import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
-import { handleActionMsg } from "../messages";
+import { handleActionMsg } from "./parser";
+
 
 class WhatsApp extends EventEmitter {
     client: Client
