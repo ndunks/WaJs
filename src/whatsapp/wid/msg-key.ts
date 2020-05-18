@@ -36,16 +36,24 @@ export default class MsgKey {
     participant
     private _serialized: string
 
-    constructor(t) {
-        let obj = t;
-        if (!obj)
+    constructor(param: {
+        id: string | MsgKey
+        fromMe: boolean
+        from?: string
+        to?: string
+        remote?: string
+        participant?: any
+    }) {
+        if (!param)
             throw new Error("MsgKey error: obj is null/undefined");
 
-        if (obj.id instanceof MsgKey) {
-            obj = obj.id
+        let obj;
+        if (param.id instanceof MsgKey) {
+            obj = param.id
             L(f())
+        } else {
+            obj = param
         }
-
 
         var n
         let i

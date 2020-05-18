@@ -5,7 +5,7 @@ import BufferReader from "../whatsapp/binary/buffer-reader";
 import assert from "assert";
 import "../whatsapp_pb"
 import { WANode } from "../whatsapp/interfaces";
-import { getRecentChats } from "../store";
+import { getRecentChats, dumpChats } from "../store";
 import { handleActionMsg } from "../whatsapp/parser";
 
 
@@ -27,16 +27,19 @@ for (const file of files) {
     assert.equal(result[0], 'action')
     assert.ok(result[1])
     assert.strictEqual(Array.isArray(result[2]), true)
+    let res;
     assert.doesNotThrow(() => {
-        handleActionMsg(result[1], result[2])
+        res = handleActionMsg(result[1], result[2])
     })
+    L('add', result[1].add, res)
     if (result[1].add == 'last') {
         addlastLength += result[2].length
     }
+    //break;
 }
-
-const recents = getRecentChats()
-assert.equal(addlastLength, recents.length)
+dumpChats()
+//const recents = getRecentChats()
+//assert.equal(addlastLength, recents.length)
 // recents.slice(0, 10).forEach(
 //     m => console.log(m.msg.key, m.msg.message)
 // )
