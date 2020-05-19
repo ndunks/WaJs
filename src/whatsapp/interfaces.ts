@@ -209,3 +209,12 @@ export interface BinAttrUser extends BinAttr {
     notify: string,
     jid: Wid
 }
+
+/** Parsed BinAttrChat */
+export interface Chat extends Pick<BinAttrChat, 'name' | 'jid'> {
+    t: number
+    count: number
+    spam: boolean
+    modify_tag: number
+
+}

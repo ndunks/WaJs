@@ -1,12 +1,17 @@
 import Wid from "./whatsapp/wid/wid";
 import WidFactory from "./whatsapp/wid//wid-factory";
-import { BinAttr } from "./whatsapp/interfaces";
+import { BinAttr, BinAttrUser, BinAttrChat, Chat } from "./whatsapp/interfaces";
 import { WebMessageInfo } from "./whatsapp_pb";
 import { Color } from "./utils";
 
 // Mocked
 const me: Wid = WidFactory.createWid('6285726501017@c.us')
 const chats: { [key: string]: WaChat } = Object.create(null)
+
+// Got from preempt
+export const chatList: Chat[] = []
+export const contacts: BinAttrUser[] = []
+
 //const chats = new Map<Wid,WaChat>()
 type addChatKind = 'relay' | 'update' | 'last' | 'before' | 'after' | 'unread'
 
@@ -19,6 +24,11 @@ interface WaChat {
     wid: Wid
     recent: boolean
     msgs: WebMessageInfo.AsObject[]
+}
+
+function getUnreadChatList() {
+    return chatList.filter(c => c.count)
+
 }
 
 function storeChats(chat: WaChat, kind: addChatKind) {
@@ -44,4 +54,4 @@ function dumpChats() {
         L(Color.y(id), chats[id].msgs.length, chats[id].msgs[0].message && chats[id].msgs[0].message.conversation)
     }
 }
-export { me, storeChats, getRecentChats, dumpChats }
+export { me, storeChats, getRecentChats, dumpChats, getUnreadChatList }

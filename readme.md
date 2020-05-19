@@ -9,7 +9,9 @@ NodeJS implementation from great research [sigalor/whatsapp-web-reveng](https://
 - [X] Reading initial WS message
 - [ ] Sending Message
 - [ ] Listen when got new message
-- [ ] Get All unread message, read and reply
+- [X] Get All unread message
+- [ ] Mark read
+- [ ] Auto reply
 
 ## Step Explanation
 - First send init command

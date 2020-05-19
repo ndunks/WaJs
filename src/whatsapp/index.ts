@@ -2,20 +2,18 @@ import Client from "./client";
 import { EventEmitter } from "events";
 import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
-    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, BinAttr, BinNodeTags
+    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, BinAttr, BinNodeTags, Chat
 } from "./interfaces";
 import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
 import { handleActionMsg } from "./parser";
 import Wid from "./wid/wid";
+import { contacts, chatList } from "../store";
 
 
 class WhatsApp extends EventEmitter {
     client: Client
-    chats: BinAttrChat[] = []
-    contacts: BinAttrUser[] = []
-
     constructor(authFile = '.auth') {
         super()
         this.client = new Client(authFile, this)
@@ -115,11 +113,19 @@ class WhatsApp extends EventEmitter {
     }
 
     binaryHandle_user(attr: BinAttrUser, childs) {
-        this.contacts.push(attr)
+        contacts.push(attr)
     }
 
     binaryHandle_chat(attr: BinAttrChat, childs) {
-        this.chats.push(attr)
+        const chat: Chat = {
+            count: parseInt(attr.count),
+            jid: attr.jid,
+            modify_tag: parseInt(attr.modify_tag),
+            name: attr.name,
+            spam: attr.spam == 'true',
+            t: parseInt(attr.t)
+        }
+        chatList.push(chat)
     }
 
     binaryHandle_action(attr: BinAttrChat, childs) {
