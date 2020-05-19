@@ -1,12 +1,12 @@
 // app.c7929dae1df9f428d8c7.js#bfefjaegfe
 let s = "", d = 0;
 
-function numUtf8Bytes(e) {
-    if (e === s)
+export function numUtf8Bytes(str: string) {
+    if (str === s)
         return d;
     let n = 0, a = 0
-    for (let t = e.length; a < t; a++) {
-        let r = e.charCodeAt(a);
+    for (let t = str.length; a < t; a++) {
+        let r = str.charCodeAt(a);
         if (r < 128)
             n++;
         else if (r < 2048)
@@ -14,13 +14,13 @@ function numUtf8Bytes(e) {
         else if (r < 55296 || 57344 <= r && r <= 65535)
             n += 3;
         else if (55296 <= r && r < 56320 && a + 1 !== t) {
-            let i = e.charCodeAt(a + 1);
+            let i = str.charCodeAt(a + 1);
             56320 <= i && i < 57344 ? (a++,
                 n += 4) : n += 3
         } else
             n += 3
     }
-    return s = e,
+    return s = str,
         d = n
 }
 function f(e, t, n, a) {

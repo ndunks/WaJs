@@ -8,6 +8,7 @@ import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
 import { handleActionMsg } from "./parser";
+import Wid from "./wid/wid";
 
 
 class WhatsApp extends EventEmitter {
@@ -31,6 +32,41 @@ class WhatsApp extends EventEmitter {
         this.client.ws.send('goodbye,,["admin","Conn","disconnect"]')
         this.client.close()
     }
+
+    send(wid:Wid, message){
+        /*
+        [
+            "action",
+            {
+                "type": "relay",
+                "epoch": "5"
+            },
+            [
+                [
+                "message",
+                null,
+                ArrayBuffer of Message or WebMessage,
+                ]
+            ]
+            ]
+         */
+    }
+    // loadMessage
+    /*
+    [
+  "query",
+  {
+    "type": "message",
+    "kind": "before",
+    "jid": "628997026464@c.us",
+    "count": "50",
+    "index": "3EB01C2454884CAA32CC",
+    "owner": "false",
+    "epoch": "2"
+  },
+  null
+]
+    */
 
     binaryHandle(parsed: BinNode) {
         if ('undefined' == typeof this[`binaryHandle_${parsed[0]}`]) {
