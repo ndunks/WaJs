@@ -50,3 +50,69 @@ this.write = function(e) {
     ))
 }
 ```
+
+## KNOWN ACTION 
+
+note `epoch` just incremented every time, I think is like message counter.
+
+Send Text Message
+``` json
+[
+  "action",
+  {
+    "type": "relay",
+    "epoch": "5"
+  },
+  [
+    [
+    "message",
+    null,
+    ArrayBuffer of WebMessageInfo proto,
+    ]
+  ]
+]
+```
+
+Presence Available
+``` json
+[
+  "action",
+  {
+    "type": "set",
+    "epoch": "1"
+  },
+  [
+    [
+      "presence",
+      {
+        "type": "available"
+      },
+      null
+    ]
+  ]
+]
+
+```
+
+Mark Read
+``` json
+[
+  "action",
+  {
+    "type": "set",
+    "epoch": "4"
+  },
+  [
+    [
+      "read",
+      {
+        "jid": "628997026464@c.us", // Wid Instance
+        "index": "3EB0FAA4F393C9057003",
+        "owner": "false",
+        "count": "1"
+      },
+      null
+    ]
+  ]
+]
+```

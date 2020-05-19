@@ -13,7 +13,7 @@ import { handleActionMsg } from "../whatsapp/parser";
 const dir = `etc/binary-sample`
 /** Message sent after preempt is contain chats */
 let addlastLength = 0;
-const files = fs.readdirSync(dir).filter(v => !v.match(/^preempt/))
+const files = fs.readdirSync(dir).filter(v => v.match(/^\d{10}-\d{2}$/))
 for (const file of files) {
     const nodeBuffer = fs.readFileSync(`${dir}/${file}`)
     const buf = new BinaryBuffer(nodeBuffer)
