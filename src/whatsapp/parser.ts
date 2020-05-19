@@ -1,11 +1,8 @@
 import { BinNode, BinAttr } from "./interfaces";
-import Wid from "./wid/wid";
-import WidFactory from "./wid/wid-factory";
 import { nodeHelper } from "./binary/helper";
 import { Color } from "../utils";
 import { msgGetTarget, storeChats, me } from "../store";
-import MsgKey from "./wid/msg-key";
-import Constant from "./constant";
+
 import { WebMessageInfo } from "../whatsapp_pb";
 // Refs on app2.{hash}.js search for "handleActionMsg"
 export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
@@ -14,7 +11,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
         case "relay":
         case "update":
             const o = parseMsg(childs[0], "relay") as WebMessageInfo.AsObject
-            if(!o){
+            if (!o) {
                 L(Color.r("<< Action IGNORED"), attr.add, attr, childs)
                 return
             }
@@ -33,7 +30,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             L(Color.b("<< Action"), attr.add, o.key, o.message)
             storeChats({
                 recent: true,
-                wid: WidFactory.createWid(o.key.remotejid),
+                wid: o.key.remotejid,
                 msgs: [o]
             }, attr.add)
             return 1
@@ -42,7 +39,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             for (let webMsg of d as WebMessageInfo.AsObject[]) {
                 storeChats({
                     recent: true,
-                    wid: WidFactory.createWid(webMsg.key.remotejid),
+                    wid: webMsg.key.remotejid,
                     msgs: [webMsg]
                 }, attr.add)
             }
@@ -61,7 +58,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             //     storeChats({
             //         meta: attr,
             //         recent: true,
-            //         wid: WidFactory.createWid(d[f].key.remotejid)
+            //         wid: d[f].key.remoteji)
             //     })
             // }
             // (0,
@@ -90,7 +87,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             // }])
             storeChats({
                 recent: false,
-                wid: WidFactory.createWid(h[0].key.remotejid),
+                wid: h[0].key.remotejid,
                 msgs: h
             }, attr.add)
             if (attr.add == 'unread') {
@@ -101,9 +98,6 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             L('Handle action not known:', attr.add)
             return 0
     }
-}
-function decodeJid(e) {
-    return Wid.isWid(e) ? WidFactory.createWid(e) : e
 }
 
 // Module id: cahfddcdga

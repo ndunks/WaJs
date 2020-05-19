@@ -1,6 +1,5 @@
 import assert from "assert";
 import { BinNode } from "../whatsapp/interfaces";
-import WidFactory from "../whatsapp/wid/wid-factory";
 import { writeNode } from "../whatsapp/binary/writer";
 import BinaryOutputStream from "../whatsapp/binary/output-stream";
 import { readNode } from "../whatsapp/binary/reader";
@@ -12,7 +11,7 @@ const node1: BinNode = [
         notify: 'Some 😜 Name',
         verify: '0',
         vname: 'Some 😜 Name',
-        jid: WidFactory.createWid('6285726501017@c.us')
+        jid: '6285726501017@c.us'
     },
     undefined
 ]

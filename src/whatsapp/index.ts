@@ -8,7 +8,6 @@ import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
 import { handleActionMsg } from "./parser";
-import Wid from "./wid/wid";
 import { contacts, chatList } from "../store";
 
 
@@ -31,7 +30,7 @@ class WhatsApp extends EventEmitter {
         this.client.close()
     }
 
-    sendTextMessage(wid: Wid, message) {
+    sendTextMessage(wid: string, message) {
         /*
         [
             "action",

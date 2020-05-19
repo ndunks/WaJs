@@ -1,23 +1,12 @@
 // app2.b77125350eb0570a9fcd.js#cdjdachjig
 import BinaryTag from "./tags";
 import Dictionary from "../dictionary";
-
-import Wid from "../wid/wid";
-import WidFactory from "../wid/wid-factory";
 import { Color } from "../../utils";
 import { WANode } from "../interfaces";
 import BinaryInputStream from "./input-stream";
+import { widHelper } from "../helper";
 
-function tryMakeWid(str: string) {
-    try {
-        return WidFactory.createWid(str)
-    } catch (e) {
-        E('reader: createWid FAIL', e);
-        return str
-    }
-}
-
-export function readString(buf: BinaryInputStream, tag: BinaryTag, autoCreateWid = true): string {
+export function readString(buf: BinaryInputStream, tag: BinaryTag): string {
     if (tag < 0)
         throw new Error("invalid start token readString" + tag);
     if (tag > 2 && tag < 236) {
@@ -36,19 +25,19 @@ export function readString(buf: BinaryInputStream, tag: BinaryTag, autoCreateWid
             return;
         case BinaryTag.BINARY_8:
             tmpStr = buf.readString(buf.readByte())
-            return buf.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
+            return buf.READING_ATTR_FLAG && tmpStr;
         case BinaryTag.BINARY_20:
             tmpStr = buf.readString(buf.readInt20())
-            return buf.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
+            return buf.READING_ATTR_FLAG && tmpStr;
         case BinaryTag.BINARY_32:
             tmpStr = buf.readString(buf.readInt32())
-            return buf.READING_ATTR_FLAG && autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr;
+            return buf.READING_ATTR_FLAG && tmpStr;
         case BinaryTag.JID_PAIR:
             let f = readString(buf, buf.readByte())
             let h = readString(buf, buf.readByte())
             if (void 0 !== f && void 0 !== h) {
                 tmpStr = f + "@" + h;
-                return autoCreateWid && Wid.isWid(tmpStr) ? tryMakeWid(tmpStr) : tmpStr
+                return tmpStr
             }
             if (void 0 !== h)
                 return h;
@@ -61,11 +50,10 @@ export function readString(buf: BinaryInputStream, tag: BinaryTag, autoCreateWid
             if (!user) {
                 throw new Error(`invalid JID_AD agent:${agent} device:${device} user:${user}`);
             }
-            return tryMakeWid(
-                agent && device ? `${user}.${agent}:${device}@c.us` :
-                    agent ? `${user}.${agent}@c.us` :
-                        device ? `${user}:${device}@c.us` : `${user}@c.us`
-            );
+            return agent && device ? `${user}.${agent}:${device}@c.us` :
+                agent ? `${user}.${agent}@c.us` :
+                    device ? `${user}:${device}@c.us` : `${user}@c.us`
+
 
         case BinaryTag.NIBBLE_8:
         case BinaryTag.HEX_8:
@@ -205,7 +193,7 @@ export function readAttributes(buf: BinaryInputStream, len: number): { [key: str
     for (let idx = 0; idx < len; idx++) {
         let key = readString(buf, buf.readByte())
         buf.CURRENT_ATTR_KEY = key
-        let value = readString(buf, buf.readByte(), Wid.canBeWid(key))
+        let value = readString(buf, buf.readByte())
         result[key] = value;
     }
 

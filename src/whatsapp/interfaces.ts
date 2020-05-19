@@ -1,4 +1,9 @@
-import Wid from "./wid/wid"
+export interface WidObj {
+    user: string
+    server: string
+    agent?: number
+    device?: number
+}
 
 export interface WhatsAppClientConfig {
     /** 16 Byte ID Auto Generated */
@@ -153,7 +158,7 @@ export interface DataPresence {
 export interface BinAttr {
     add?: string
     type?: string
-    [key: string]: string | Wid
+    [key: string]: string
 }
 
 /** Can be encrypted (bin) or not encrypted */
@@ -199,7 +204,7 @@ export interface BinAttrChat extends BinAttr {
     t: string // '1588913596'
     count: string // '0'
     spam: string // 'false'
-    jid: Wid
+    jid: string
     modify_tag: string // '481019'
     name: string
 }
@@ -207,7 +212,7 @@ export interface BinAttrChat extends BinAttr {
 export interface BinAttrUser extends BinAttr {
     /** pushname */
     notify: string,
-    jid: Wid
+    jid: string
 }
 
 /** Parsed BinAttrChat */

@@ -1,11 +1,8 @@
-// bfidcjhfda: function(e, t, a) {
-
 import Dictionary from "../dictionary";
-import WidFactory from "../wid/wid-factory";
-import Wid from "../wid/wid";
 import BinaryTag from "./tags";
 import { BinNode, BinAttr } from "../interfaces";
 import BinaryOutputStream from "./output-stream";
+import { widHelper } from "../helper";
 
 /** Reversed single bytes */
 let singleByteMaps = {};
@@ -29,60 +26,60 @@ export function writeNode(bos: BinaryOutputStream, node: BinNode) {
     writeChildren(bos, node[2])
 }
 
-export function writeString(bos: BinaryOutputStream, value: string | Wid, server?: boolean) {
-    if ("string" != typeof value && !(value instanceof Wid))
+export function writeString(bos: BinaryOutputStream, value: string, server?: boolean) {
+    if ("string" != typeof value)
         throw new Error('writer:writeString passed non-string/wid type: ' + typeof value)
 
-    if (value instanceof Wid)
-        writeJid(bos, value);
-    else {
-        let i
-        let r
-        let byteCode = singleByteMaps.hasOwnProperty(value) ? singleByteMaps[value] : undefined;
-        if ("c.us" !== value || server)
-            if (void 0 === byteCode) {
-                if (value.indexOf("@") < 1)
-                    writeStringRaw(bos, value);
-                else
-                    try {
-                        var u = WidFactory.createWid(value);
-                        writeJid(bos, u)
-                    } catch (a) {
-                        writeStringRaw(bos, value)
-                    }
-            } else {
-                if (byteCode < BinaryTag.SINGLE_BYTE_MAX)
-                    writeToken(bos, byteCode);
-                else {
-                    var f = byteCode - BinaryTag.SINGLE_BYTE_MAX;
-                    switch (r = f % 256,
-                    f >> 8) {
-                        case 0:
-                            i = BinaryTag.DICTIONARY_0;
-                            break;
-                        case 1:
-                            i = BinaryTag.DICTIONARY_1;
-                            break;
-                        case 2:
-                            i = BinaryTag.DICTIONARY_2;
-                            break;
-                        case 3:
-                            i = BinaryTag.DICTIONARY_3;
-                            break;
-                        default:
-                            throw new Error("double byte dictionary token out of range: " + value + " " + byteCode)
-                    }
+    // if (value instanceof Wid)
+    //     writeJid(bos, value);
+    // else {
+    let i
+    let r
+    let byteCode = singleByteMaps.hasOwnProperty(value) ? singleByteMaps[value] : undefined;
+    if ("c.us" !== value || server)
+        if (void 0 === byteCode) {
+            if (value.indexOf("@") < 1)
+                writeStringRaw(bos, value);
+            else
+                try {
+                    //var u = WidFactory.createWid(value);
+                    writeJid(bos, value)
+                } catch (a) {
+                    writeStringRaw(bos, value)
                 }
-                writeToken(bos, i)
-                writeToken(bos, r)
+        } else {
+            if (byteCode < BinaryTag.SINGLE_BYTE_MAX)
+                writeToken(bos, byteCode);
+            else {
+                var f = byteCode - BinaryTag.SINGLE_BYTE_MAX;
+                switch (r = f % 256,
+                f >> 8) {
+                    case 0:
+                        i = BinaryTag.DICTIONARY_0;
+                        break;
+                    case 1:
+                        i = BinaryTag.DICTIONARY_1;
+                        break;
+                    case 2:
+                        i = BinaryTag.DICTIONARY_2;
+                        break;
+                    case 3:
+                        i = BinaryTag.DICTIONARY_3;
+                        break;
+                    default:
+                        throw new Error("double byte dictionary token out of range: " + value + " " + byteCode)
+                }
             }
-        else
-            writeToken(bos, singleByteMaps["s.whatsapp.net"])
-    }
+            writeToken(bos, i)
+            writeToken(bos, r)
+        }
+    else
+        writeToken(bos, singleByteMaps["s.whatsapp.net"])
+    //}
 }
 
 export function writeStringRaw(buf: BinaryOutputStream, t) {
-    var a = Buffer.byteLength(t,'utf8');
+    var a = Buffer.byteLength(t, 'utf8');
     if (a >= 4294967296)
         throw new Error("string too large to encode (len = " + a + "): " + t);
     a >= 1 << 20 ? (buf.pushByte(BinaryTag.BINARY_32),
@@ -92,22 +89,18 @@ export function writeStringRaw(buf: BinaryOutputStream, t) {
         buf.pushString(t)
 }
 
-export function writeJid(e, t) {
-    var a = t.user
-        , n = t.server
-        , i = t.agent
-        , r = t.device;
-    if (i || r) {
-        if (i > 255 || r > 255 || "c.us" !== n && "s.whatsapp.net" !== n)
-            throw new Error("invalid agent:".concat(i, " or device:").concat(r, " or server:").concat(n, " for wid ").concat(t.toString()));
-        e.pushByte(BinaryTag.JID_AD),
-            e.pushByte(i || 0),
-            e.pushByte(r || 0),
-            a ? writePackedBytesStringFallback(e, a) : writeToken(e, BinaryTag.LIST_EMPTY)
+export function writeJid(bos: BinaryOutputStream, rawJid: string) {
+    const jid = widHelper.parse(rawJid)
+
+    if (jid.agent || jid.device) {
+        bos.pushByte(BinaryTag.JID_AD),
+            bos.pushByte(jid.agent || 0),
+            bos.pushByte(jid.device || 0),
+            jid.user ? writePackedBytesStringFallback(bos, jid.user) : writeToken(bos, BinaryTag.LIST_EMPTY)
     } else
-        e.pushByte(BinaryTag.JID_PAIR),
-            a ? writePackedBytesStringFallback(e, a) : writeToken(e, BinaryTag.LIST_EMPTY),
-            writeString(e, n)
+        bos.pushByte(BinaryTag.JID_PAIR),
+            jid.user ? writePackedBytesStringFallback(bos, jid.user) : writeToken(bos, BinaryTag.LIST_EMPTY),
+            writeString(bos, jid.server)
 }
 
 export function writeToken(e, t) {
@@ -181,7 +174,7 @@ export function writePackedBytes(bos: BinaryOutputStream, t) {
 }
 
 export function writePackedBytesImpl(bos: BinaryOutputStream, str: string, a) {
-    var n = Buffer.byteLength(str,'utf8');
+    var n = Buffer.byteLength(str, 'utf8');
     if (n > BinaryTag.PACKED_MAX)
         throw new Error("too many bytes to nibble-encode: len = " + n);
     var i, s = [], d = 0;

@@ -33,11 +33,7 @@ assert.deepEqual(result[2][14], [
         notify: 'defri reza',
         verify: '0',
         vname: 'defri reza',
-        jid: { // class Wid
-            user: '62816655404',
-            server: 'c.us',
-            _serialized: '62816655404@c.us'
-        }
+        jid: '62816655404@c.us'
     },
     undefined
 ])
@@ -65,11 +61,7 @@ assert.deepEqual(result[2][2], [
         t: '1588824994',
         count: '0',
         spam: 'false',
-        jid: { // class Wid
-            user: '6281230008708',
-            server: 'c.us',
-            _serialized: '6281230008708@c.us'
-        },
+        jid: '6281230008708@c.us',
         modify_tag: '406232',
         name: 'Ade'
     },
