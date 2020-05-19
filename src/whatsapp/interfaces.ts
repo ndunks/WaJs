@@ -149,14 +149,17 @@ export interface DataPresence {
     t: number
     deny: boolean
 }
+
 export interface BinAttr {
-    [key: string]: any
+    add?: string
+    type?: string
+    [key: string]: string | Wid
 }
 
 /** Can be encrypted (bin) or not encrypted */
 export type WANode = [string, (string | BinAttr | any)?, any?]
 
-export type BinNodeTags = 'response' | 'action' | 'user' | 'chat' | 'message' | 'groups_v2' | 'broadcast' | 'notification' | 'call_log' | 'security'
+export type BinNodeTags = 'response' | 'action' | 'user' | 'chat' | 'message' | 'groups_v2' | 'broadcast' | 'notification' | 'call_log' | 'security' | 'query' | 'error' | 'presence'
 
 /** Binary node after decrypted and parsed */
 export interface BinNode extends WANode {
