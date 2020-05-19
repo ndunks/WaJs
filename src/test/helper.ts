@@ -34,7 +34,7 @@ export function testHelperDisconnectWa(afterSecond: number = 1) {
     })
 }
 
-export async function testHelperSequential(jobs: Promise<any>[]) {
+export async function testHelperSequential(jobs: (() => Promise<any>)[]) {
     const stat = {
         ok: 0,
         get fail() {
@@ -45,7 +45,7 @@ export async function testHelperSequential(jobs: Promise<any>[]) {
 
     for (let job of jobs) {
         try {
-            await job
+            await job()
             stat.ok++
         } catch (error) {
             stat.errors.push(error)

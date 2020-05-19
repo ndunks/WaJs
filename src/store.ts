@@ -28,7 +28,10 @@ interface WaChat {
 
 function getUnreadChatList() {
     return chatList.filter(c => c.count)
+}
 
+function getChatGroupList(){
+    return chatList.filter( c => c.jid.isGroup() )
 }
 
 function storeChats(chat: WaChat, kind: addChatKind) {

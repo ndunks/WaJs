@@ -14,6 +14,10 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
         case "relay":
         case "update":
             const o = parseMsg(childs[0], "relay") as WebMessageInfo.AsObject
+            if(!o){
+                L(Color.r("<< Action IGNORED"), attr.add, attr, childs)
+                return
+            }
             //let s = msgGetTarget(o);
             // (0,
             //     v.default)([{
@@ -26,7 +30,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             //     chat: s,
             //     msg: o
             // }])
-            L("GO RELAYE/UPDATE", o.message)
+            L(Color.b("<< Action"), attr.add, o.key, o.message)
             storeChats({
                 recent: true,
                 wid: WidFactory.createWid(o.key.remotejid),
@@ -94,7 +98,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             }
             return h.length
         default:
-            L('Handle action not known')
+            L('Handle action not known:', attr.add)
             return 0
     }
 }
@@ -145,6 +149,6 @@ export function parseMsg(node: BinNode, kind: string) {
         case "security":
             throw new Error('Not implemented parseMsgSecurity(node)')
         default:
-            return L(Color.r("parseMsg: unhandled"), node[0])
+            return L(Color.r("parseMsg: unhandled"), node)
     }
 }
