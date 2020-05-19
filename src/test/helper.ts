@@ -20,3 +20,36 @@ export function testHelperLoadWa(): Promise<WhatsApp> {
         wa.on('initialized', () => res(wa_instance = wa))
     })
 }
+
+export function testHelperDisconnectWa(afterSecond: number = 1) {
+    return new Promise((res, rej) => {
+        setTimeout(() => {
+            try {
+                wa_instance.close()
+                res(true)
+            } catch (error) {
+                rej(error)
+            }
+        }, afterSecond * 1000)
+    })
+}
+
+export async function testHelperSequential(jobs: Promise<any>[]) {
+    const stat = {
+        ok: 0,
+        get fail() {
+            return this.errors.length
+        },
+        errors: []
+    }
+
+    for (let job of jobs) {
+        try {
+            await job
+            stat.ok++
+        } catch (error) {
+            stat.errors.push(error)
+        }
+    }
+    return stat
+}

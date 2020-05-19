@@ -239,7 +239,8 @@ export class WASocket {
         L('sendNode', node)
         return this.send(
             Buffer.from(bos.toBuffer()),
-            'node:' + node[0]
+            'node:' + node[0],
+            this.shortTag()
         )
     }
 

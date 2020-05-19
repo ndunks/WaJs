@@ -42621,7 +42621,6 @@
                 for (var a = [], n = this.readListSize(e, t), i = 0; i < n; i++){
                     var noe = this.readNode(e)
                     a.push(noe);
-                    console.log('LIST', noe)
                 }
                     
                 return a

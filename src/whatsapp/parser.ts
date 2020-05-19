@@ -10,6 +10,7 @@ import { WebMessageInfo } from "../whatsapp_pb";
 // Refs on app2.{hash}.js search for "handleActionMsg"
 export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
     switch (attr.add) {
+        // Realtime new message?
         case "relay":
         case "update":
             const o = parseMsg(childs[0], "relay") as WebMessageInfo.AsObject
@@ -25,7 +26,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             //     chat: s,
             //     msg: o
             // }])
-            //L('ACtion msg update not implementes', new Error().stack)
+            L("GO RELAYE/UPDATE", o.message)
             storeChats({
                 recent: true,
                 wid: WidFactory.createWid(o.key.remotejid),
@@ -88,6 +89,9 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
                 wid: WidFactory.createWid(h[0].key.remotejid),
                 msgs: h
             }, attr.add)
+            if (attr.add == 'unread') {
+                L('GOT UNREAD!', h.map(v => v.message))
+            }
             return h.length
         default:
             L('Handle action not known')
