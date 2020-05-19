@@ -9,6 +9,8 @@ import { readNode } from "./binary/reader";
 import BufferReader from "./binary/buffer-reader";
 import BinaryBuffer from "./binary/buffer";
 import WhatsApp from ".";
+import BinaryOutputStream from "./binary/output-stream";
+import { writeNode } from "./binary/writer";
 
 /** Dynamic handler form promise */
 export const commandTagHandlers = new Map<String, AsyncTagHandler>()
@@ -229,6 +231,15 @@ export class WASocket {
             Buffer.from(JSON.stringify(msg), 'ascii'),
             hint,
             this.shortTag()
+        )
+    }
+    sendNode(node: BinNode) {
+        const bos = new BinaryOutputStream()
+        writeNode(bos, node)
+        L('sendNode', node)
+        return this.send(
+            Buffer.from(bos.toBuffer()),
+            'node:' + node[0]
         )
     }
 

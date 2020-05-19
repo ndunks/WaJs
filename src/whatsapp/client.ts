@@ -2,7 +2,8 @@ import { randomBytes, createHmac } from "crypto";
 import { arch, platform } from "os";
 import {
     CmdInitResponse, WhatsAppServerMsg,
-    WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig} from "./interfaces";
+    WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig, BinNode, BinNodeTags, BinAttr
+} from "./interfaces";
 import * as fs from 'fs'
 import { configLoad, configStore, Color } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys } from "./secure";
@@ -34,6 +35,8 @@ export default class Client {
 
     ws: WASocket
     timeSkew: number
+    epochCount = 0
+    epoch = 0
 
     protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void
     /** Internal command handler */
@@ -69,11 +72,59 @@ export default class Client {
         }
     }
 
+    epochSend(noIncrementEpoch?: boolean) {
+        if (0 === this.epochCount)
+            this.epoch++
+        if (!noIncrementEpoch)
+            this.epochCount++
+
+        L('epochSend', this.epochCount, this.epoch)
+        return this.epoch.toString()
+    }
+
+    epochRecv() {
+        if (this.epochCount > 0) {
+            this.epochCount--
+        } else {
+            L('epochRecv zero epochCount')
+        }
+        L('epochRecv', this.epochCount, this.epoch)
+    }
+
+    actionNode(type: string, childs: BinNode[], noIncrementEpoch?: boolean): BinNode {
+        return ["action", {
+            type: type,
+            epoch: this.epochSend(noIncrementEpoch)
+        }, childs]
+    }
+
+    makeNodeWithEpoch(tag: BinNodeTags, attr?: BinAttr, childs?: BinNode[]): BinNode {
+
+        attr = attr || {}
+        attr.epoch = this.epochSend()
+
+        return [tag, attr, childs]
+    }
+
+    queryNode(attr?: BinAttr, childs?: BinNode[]) {
+        return this.makeNodeWithEpoch("query", attr, childs)
+    }
+
+    responseNode(attr?: BinAttr, childs?: BinNode[]) {
+        return this.makeNodeWithEpoch("response", attr, childs)
+    }
+
+    errorNode(e): BinNode {
+        return ["error", {
+            code: e.toString(),
+            epoch: this.epochSend()
+        }, void 0]
+    }
     connect() {
         return new Promise<WhatsAppServerMsgConn>(
             (resolve, reject) => {
 
-                this.ws = new WASocket(this.wa, this.config )
+                this.ws = new WASocket(this.wa, this.config)
                 const onOpen = () => {
                     // Swap error listener
                     this.wa.removeListener("error", reject)
@@ -171,7 +222,7 @@ export default class Client {
                 break;
         }
     }
-    
+
     sign(data: Buffer) {
         const sign = createHmac('sha256', this.config.macKey).update(data).digest()
         return Buffer.concat([sign, data])

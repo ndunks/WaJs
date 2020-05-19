@@ -2,7 +2,7 @@ import Client from "./client";
 import { EventEmitter } from "events";
 import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
-    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, BinAttr
+    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, BinAttr, BinNodeTags
 } from "./interfaces";
 import { Color } from "../utils";
 import * as fs from "fs";
@@ -32,9 +32,7 @@ class WhatsApp extends EventEmitter {
         this.client.ws.send('goodbye,,["admin","Conn","disconnect"]')
         this.client.close()
     }
-    sendAction(attr: BinAttr, childs: BinNode[]) {
 
-    }
     sendTextMessage(wid: Wid, message) {
         /*
         [
@@ -53,7 +51,12 @@ class WhatsApp extends EventEmitter {
             ]
          */
     }
-    presence() {
+
+    presence(type: 'available' | 'unavailable') {
+        const node = this.client.actionNode('set', [
+            ['presence', { type }, undefined]
+        ])
+        return this.client.ws.sendNode(node)
         /*
         [
             "action",
@@ -73,6 +76,7 @@ class WhatsApp extends EventEmitter {
             ]
         */
     }
+
     markRead() {
         /*
         */
