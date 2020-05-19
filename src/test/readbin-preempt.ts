@@ -1,9 +1,8 @@
 import * as fs from "fs"
-import BinaryBuffer from "../whatsapp/binary/buffer";
 import { readNode } from "../whatsapp/binary/reader";
-import BufferReader from "../whatsapp/binary/buffer-reader";
 import assert from "assert";
 import { WANode } from "../whatsapp/interfaces";
+import BinaryInputStream from "../whatsapp/binary/input-stream";
 
 
 const dir = `etc/binary-sample`
@@ -13,9 +12,8 @@ let result: WANode;
 /**
  * First preempt
  */
-let nodeBuffer = fs.readFileSync(`${dir}/${preempts[0]}`)
-let buf = new BinaryBuffer(nodeBuffer)
-let bufferReader = new BufferReader(buf)
+let buf = fs.readFileSync(`${dir}/${preempts[0]}`)
+let bufferReader = new BinaryInputStream(buf)
 
 assert.doesNotThrow(() => result = readNode(bufferReader))
 assert.equal(result[0], 'response')
@@ -46,9 +44,8 @@ assert.deepEqual(result[2][14], [
 /**
  * Second preempt
  */
-nodeBuffer = fs.readFileSync(`${dir}/${preempts[1]}`)
-buf = new BinaryBuffer(nodeBuffer)
-bufferReader = new BufferReader(buf)
+buf = fs.readFileSync(`${dir}/${preempts[1]}`)
+bufferReader = new BinaryInputStream(buf)
 assert.doesNotThrow(() => result = readNode(bufferReader))
 assert.equal(result[0], 'response')
 assert.ok(result[1])

@@ -118,7 +118,7 @@ function sureNotEmpty(e) {
 function parseMsgMessage(node: BinNode, kind: string) {
 
     var child = nodeHelper.children(node);
-    if (child instanceof ArrayBuffer)
+    if (child instanceof Buffer)
         try {
             const parsed = WebMessageInfo.deserializeBinary(Buffer.from(child)).toObject()
             // const id = WidFactory.createWid(parsed.key.remotejid)

@@ -1,12 +1,11 @@
 import * as fs from "fs"
-import BinaryBuffer from "../whatsapp/binary/buffer";
 import { readNode } from "../whatsapp/binary/reader";
-import BufferReader from "../whatsapp/binary/buffer-reader";
 import assert from "assert";
 import "../whatsapp_pb"
 import { WANode } from "../whatsapp/interfaces";
-import { getRecentChats, dumpChats } from "../store";
+import { dumpChats } from "../store";
 import { handleActionMsg } from "../whatsapp/parser";
+import BinaryInputStream from "../whatsapp/binary/input-stream";
 
 
 
@@ -15,9 +14,8 @@ const dir = `etc/binary-sample`
 let addlastLength = 0;
 const files = fs.readdirSync(dir).filter(v => v.match(/^\d{10}-\d{2}$/))
 for (const file of files) {
-    const nodeBuffer = fs.readFileSync(`${dir}/${file}`)
-    const buf = new BinaryBuffer(nodeBuffer)
-    const bufferReader = new BufferReader(buf)
+    const buf = fs.readFileSync(`${dir}/${file}`)
+    const bufferReader = new BinaryInputStream(buf)
     let result: WANode;
 
     assert.doesNotThrow(() => {

@@ -4,7 +4,6 @@ import Dictionary from "../dictionary";
 import WidFactory from "../wid/wid-factory";
 import Wid from "../wid/wid";
 import BinaryTag from "./tags";
-import { numUtf8Bytes } from "./buffer";
 import { BinNode, BinAttr } from "../interfaces";
 import BinaryOutputStream from "./output-stream";
 
@@ -83,7 +82,7 @@ export function writeString(bos: BinaryOutputStream, value: string | Wid, server
 }
 
 export function writeStringRaw(buf: BinaryOutputStream, t) {
-    var a = numUtf8Bytes(t);
+    var a = Buffer.byteLength(t,'utf8');
     if (a >= 4294967296)
         throw new Error("string too large to encode (len = " + a + "): " + t);
     a >= 1 << 20 ? (buf.pushByte(BinaryTag.BINARY_32),
@@ -182,7 +181,7 @@ export function writePackedBytes(bos: BinaryOutputStream, t) {
 }
 
 export function writePackedBytesImpl(bos: BinaryOutputStream, str: string, a) {
-    var n = numUtf8Bytes(str);
+    var n = Buffer.byteLength(str,'utf8');
     if (n > BinaryTag.PACKED_MAX)
         throw new Error("too many bytes to nibble-encode: len = " + n);
     var i, s = [], d = 0;

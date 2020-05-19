@@ -6,11 +6,10 @@ import {
 import { Color } from "../utils";
 import { hmacDecrypt, hmacEncrypt } from "./secure";
 import { readNode } from "./binary/reader";
-import BufferReader from "./binary/buffer-reader";
-import BinaryBuffer from "./binary/buffer";
 import WhatsApp from ".";
 import BinaryOutputStream from "./binary/output-stream";
 import { writeNode } from "./binary/writer";
+import BinaryInputStream from "./binary/input-stream";
 
 /** Dynamic handler form promise */
 export const commandTagHandlers = new Map<String, AsyncTagHandler>()
@@ -62,7 +61,7 @@ export class WASocket {
                 logs.push(Color.b('BIN'))
                 try {
                     message = hmacDecrypt(this.config.aesKey, this.config.macKey, message)
-                    parsed = readNode(new BufferReader(new BinaryBuffer(message)))
+                    parsed = readNode(new BinaryInputStream(message))
                 } catch (error) {
                     logs.push(Color.r(error))
                     L(...logs)

@@ -1,6 +1,4 @@
 import { BinNode } from "../interfaces";
-import BinaryBuffer from "./buffer";
-
 /*
 bcjjbcbjaa: function(e, t, n) {
     "use strict";

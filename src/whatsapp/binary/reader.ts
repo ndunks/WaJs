@@ -1,12 +1,12 @@
 // app2.b77125350eb0570a9fcd.js#cdjdachjig
 import BinaryTag from "./tags";
 import Dictionary from "../dictionary";
-import BufferReader from "./buffer-reader";
+
 import Wid from "../wid/wid";
 import WidFactory from "../wid/wid-factory";
 import { Color } from "../../utils";
 import { WANode } from "../interfaces";
-
+import BinaryInputStream from "./input-stream";
 
 function tryMakeWid(str: string) {
     try {
@@ -17,7 +17,7 @@ function tryMakeWid(str: string) {
     }
 }
 
-export function readString(buf: BufferReader, tag: BinaryTag, autoCreateWid = true): string {
+export function readString(buf: BinaryInputStream, tag: BinaryTag, autoCreateWid = true): string {
     if (tag < 0)
         throw new Error("invalid start token readString" + tag);
     if (tag > 2 && tag < 236) {
@@ -72,10 +72,10 @@ export function readString(buf: BufferReader, tag: BinaryTag, autoCreateWid = tr
             return readPacked8(tag, buf);
         default:
             //throw LOG(1, !0)(d(), n, t, a, e.debugInfoWithPadding()),
-            throw new Error(`invalid string tag: ${tag}, attr_key: ${buf.CURRENT_ATTR_KEY}`)
+            throw new Error(`invalid string tag: ${tag}, attr_key: ${buf.CURRENT_ATTR_KEY}. ${buf.debugInfo()}`)
     }
 }
-export function readList(buf: BufferReader, byteTag: BinaryTag) {
+export function readList(buf: BinaryInputStream, byteTag: BinaryTag) {
     let list: WANode[] = []
     let size = readListSize(buf, byteTag)
     for (let i = 0; i < size; i++) {
@@ -89,7 +89,7 @@ export function readList(buf: BufferReader, byteTag: BinaryTag) {
     }
     return list
 }
-export function readPacked8(tag: number, buf: BufferReader) {
+export function readPacked8(tag: number, buf: BinaryInputStream) {
     let a, n, i, r, s, o: number
 
     for (a = buf.readByte(), n = a >> 7, i = 127 & a, r = "", o = 0; o < i; o++) {
@@ -102,7 +102,7 @@ export function readPacked8(tag: number, buf: BufferReader) {
     }
     return r
 }
-export function unpackByte(buf: BufferReader, tag, len: number) {
+export function unpackByte(buf: BinaryInputStream, tag, len: number) {
     switch (tag) {
         case BinaryTag.NIBBLE_8:
             return unpackNibble(buf, len);
@@ -113,19 +113,19 @@ export function unpackByte(buf: BufferReader, tag, len: number) {
     }
 }
 
-export function unpackNibble(buf: BufferReader, e: number) {
+export function unpackNibble(buf: BinaryInputStream, e: number) {
     if (!Dictionary.nibbleDecode.hasOwnProperty(e))
         throw new Error("invalid nibble to unpack: " + e);
     return Dictionary.nibbleDecode[e]
 }
 
-export function unpackHex(buf: BufferReader, e: number) {
+export function unpackHex(buf: BinaryInputStream, e: number) {
     if (e >= 0 && e <= 15)
         return e.toString(16).toUpperCase();
     throw new Error("invalid hex to unpack: " + e)
 }
 
-export function readListSize(buf: BufferReader, tag: BinaryTag): number {
+export function readListSize(buf: BinaryInputStream, tag: BinaryTag): number {
     switch (tag) {
         case BinaryTag.LIST_EMPTY:
             return 0;
@@ -158,46 +158,46 @@ export function getTokenDouble(no: number, len: number) {
     return a
 }
 
-export function readNode(buf: BufferReader): WANode {
-    let byteTag = buf.readByte()
-    const listSize = readListSize(buf, byteTag)
-    byteTag = buf.readByte();
+export function readNode(bis: BinaryInputStream): WANode {
+    let byteTag = bis.readByte()
+    const listSize = readListSize(bis, byteTag)
+    byteTag = bis.readByte();
     if (byteTag == BinaryTag.STREAM_END) {
         throw new Error("Unexpected end tag");
     }
-    let tag = readString(buf, byteTag)
+    let tag = readString(bis, byteTag)
     if (listSize === 0 || !tag) {
         throw new Error(`Invalid node. 0 list (${listSize}) or empty tag (${tag}).`);
     }
 
     let attrSize = listSize - 2 + listSize % 2 >> 1;
-    let attr: { [key: string]: string } = readAttributes(buf, attrSize);
+    let attr: { [key: string]: string } = readAttributes(bis, attrSize);
     if (listSize % 2 == 1) {
         return [tag, attr, undefined]
     }
 
     let child;
 
-    byteTag = buf.readByte()
+    byteTag = bis.readByte()
     if (isListTag(byteTag)) {
-        child = readList(buf, byteTag);
+        child = readList(bis, byteTag);
     } else if (byteTag === BinaryTag.BINARY_8) {
-        var c = buf.readByte();
-        child = buf.readBytes(c)
+        var c = bis.readByte();
+        child = bis.readBytes(c)
     } else if (byteTag === BinaryTag.BINARY_20) {
-        var u = buf.readInt20();
-        child = buf.readBytes(u)
+        var u = bis.readInt20();
+        child = bis.readBytes(u)
     } else if (byteTag === BinaryTag.BINARY_32) {
-        var l = buf.readInt32();
-        child = buf.readBytes(l)
+        var l = bis.readInt32();
+        child = bis.readBytes(l)
     } else
-        child = readString(buf, byteTag);
+        child = readString(bis, byteTag);
     return [tag, attr, child]
 }
 export function isListTag(tag: number) {
     return tag === BinaryTag.LIST_EMPTY || tag === BinaryTag.LIST_8 || tag === BinaryTag.LIST_16
 }
-export function readAttributes(buf: BufferReader, len: number): { [key: string]: string } {
+export function readAttributes(buf: BinaryInputStream, len: number): { [key: string]: string } {
     buf.READING_ATTR_FLAG = true
     //L("Read Attr", len)
 
