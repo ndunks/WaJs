@@ -24,7 +24,7 @@ export class WASocket {
 
     constructor(private wa: WhatsApp, private config: WhatsAppClientConfig
     ) {
-
+        wa.on('initialized', () => this.watchdogTimer = setInterval(this.watchdog, 5000))
         this.sock = new WebSocket("wss://web.whatsapp.com/ws", {
             origin: "https://web.whatsapp.com",
         })
@@ -141,7 +141,7 @@ export class WASocket {
                     logs.push(Color.r('BinData not array!'), parsed.constructor && parsed.constructor.name || parsed)
                 }
             } else {
-                logs.push(Color.r('NO ACTION'))
+                logs.push(Color.r('NO ACTION'), parsed)
             }
 
             L(...logs)
@@ -185,15 +185,18 @@ export class WASocket {
         }
         return new Promise<T>(
             (resolve, reject) => {
+                let type;
                 if (typeof message == 'string') {
                     message = `${tag},${message}`
+                    type = 'STR'
                 } else {
                     // encrypt
                     message = hmacEncrypt(this.config.aesKey, this.config.macKey, message)
                     message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
+                    type = 'BIN'
                 }
                 commandTagHandlers.set(tag, { sentMessage: message, callback: resolve, hint })
-                L(Color.y('>> ' + tag), hint)
+                L(Color.y('>> ' + tag), Color.b(type), hint, message.length)
                 this.sock.send(message, err => err ? reject(err) : null)
             }
         )
@@ -215,14 +218,15 @@ export class WASocket {
             this.shortTag()
         )
     }
-    sendNode(node: BinNode) {
+    sendNode(node: BinNode, tag?: string) {
         const bos = new BinaryOutputStream()
         writeNode(bos, node)
-        L('sendNode', node)
+        const buf = bos.toBuffer()
+        L('sendNode', node, buf)
         return this.send(
-            Buffer.from(bos.toBuffer()),
+            buf,
             'node:' + node[0],
-            this.shortTag()
+            tag || this.shortTag()
         )
     }
 

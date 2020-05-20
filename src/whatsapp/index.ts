@@ -52,19 +52,22 @@ class WhatsApp extends EventEmitter {
         const msg = new Message()
         const key = new MessageKey()
         const webMsg = new WebMessageInfo()
-        key.setId(this.createMessageId())
+        const msgId = this.createMessageId()
+        key.setId(msgId)
         key.setRemotejid(jid)
         key.setFromme(true)
         msg.setConversation(message)
         webMsg.setKey(key)
         webMsg.setMessage(msg)
         webMsg.setMessagetimestamp(Math.floor(Date.now() / 1000))
+        webMsg.setStatus(1)
+        const buf = webMsg.serializeBinary()
         const node = this.client.actionNode("relay", [
-            ["message", null, webMsg.serializeBinary()]
+            ["message", undefined, buf]
         ])
-        L('sendTextMessage', node)
+        L('sendTextMessage', node, buf.length)
         //return Promise.resolve(true)
-        return this.client.ws.sendNode(node)
+        return this.client.ws.sendNode(node, msgId)
         /*
         [
             "action",

@@ -1,6 +1,8 @@
 import * as assert from "assert";
 import * as fs from "fs";
-import { Chat, Message, WebMessageInfo } from "../whatsapp_pb";
+import { Chat, Message, WebMessageInfo, MessageKey } from "../whatsapp_pb";
+import { writeNode } from "../whatsapp/binary/writer";
+import BinaryOutputStream from "../whatsapp/binary/output-stream";
 
 const plainObj = {
     id: 'AEDF49F7E5FD1F',
@@ -32,3 +34,28 @@ assert.equal(msg.getKey().getId(), '3EB082A541839959E947')
 assert.ok(msg.getMessage())
 // Content of the message
 assert.ok(msg.getMessage().getConversation(), 'tttest')
+const msg1BufNode = new BinaryOutputStream()
+writeNode(msg1BufNode, ['message', null, msg.serializeBinary()])
+assert.equal(msg1BufNode.buf.length, msg1BufNode.size)
+//console.log(msg1BufNode);
+
+// Recreate msg
+const msgNew = new Message()
+const key = new MessageKey()
+const msg2 = new WebMessageInfo()
+const msgId = msg.getKey().getId()
+const jid = '628997026464@c.us'
+const message = msg.getMessage().getConversation()
+key.setId(msgId)
+key.setRemotejid(jid)
+key.setFromme(true)
+msgNew.setConversation(message)
+msg2.setKey(key)
+msg2.setMessage(msgNew)
+msg2.setMessagetimestamp(msg.getMessagetimestamp())
+msg2.setStatus(1)
+////console.log(msg2.toObject())
+const msg2BufNode = new BinaryOutputStream()
+writeNode(msg2BufNode, ['message', null, msg.serializeBinary()])
+//console.log(msg2BufNode);
+assert.equal(msg2BufNode.buf.compare(msg1BufNode.buf), 0);

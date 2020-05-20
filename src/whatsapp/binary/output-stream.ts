@@ -2,8 +2,11 @@ export default class BinaryOutputStream {
     WRITING_ATTR_FLAG: boolean = false;
     CURRENT_ATTR_KEY: string;
     buf: Buffer
-    constructor(public size = 0) {
+    constructor(size = 0) {
         this.buf = Buffer.alloc(size)
+    }
+    get size() {
+        return this.buf.byteLength
     }
 
     pushInt16(e: number) {
@@ -39,7 +42,6 @@ export default class BinaryOutputStream {
         const newBuf = new Uint8Array(this.size + e.byteLength)
         newBuf.set(this.buf)
         newBuf.set(e, this.size)
-        this.size += e.byteLength
         this.buf = Buffer.concat([this.buf, e])
         return this
     }
