@@ -1,3 +1,5 @@
+import { Message, MessageKey } from "../whatsapp_pb"
+
 export interface WidObj {
     user: string
     server: string
@@ -218,8 +220,17 @@ export interface BinAttrUser extends BinAttr {
 /** Parsed BinAttrChat */
 export interface Chat extends Pick<BinAttrChat, 'name' | 'jid'> {
     t: number
-    count: number
+    unreadCount: number
     spam: boolean
     modify_tag: number
+    messages?: ChatMessage[]
+}
 
+export interface ChatMessage {
+    key: MessageKey.AsObject
+    recent?: boolean
+    direction: 'in' | 'out'
+    /** 1: out, 2: sent, 3: read */
+    ack: number
+    message: Message.AsObject
 }

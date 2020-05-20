@@ -1,5 +1,5 @@
-import { me } from "../../store"
 import { widHelper } from "../helper"
+import store from "../../store"
 
 function l() {
     return "MsgKey case error:"
@@ -46,7 +46,7 @@ export default class MsgKey {
         let to = obj.from && obj.to && obj.id
         let remote = obj.fromMe && obj.remote && obj.id;
 
-        if (!me)
+        if (!store.me)
             throw new Error("MsgKey error: Conn.me is undefined");
         if (to && remote)
             throw new Error("MsgKey error: unclear which constructor to use: " + JSON.stringify(obj));
@@ -62,11 +62,11 @@ export default class MsgKey {
             //     !(n instanceof Wid) || !(i instanceof Wid) || d && !(d instanceof Wid))
             //     throw new Error("MsgKey error: something's not a wid: from:".concat(String(n), " to:").concat(String(i), " p:").concat(String(d)));
             u = (n == i) ? u : void 0,
-                (n == i) && (n == me) ? (p = "out" === u,
-                    g = me) : (n == me) ? (p = !0,
-                        g = i) : (i == me) ? (p = !1,
+                (n == i) && (n == store.me) ? (p = "out" === u,
+                    g = store.me) : (n == store.me) ? (p = !0,
+                        g = i) : (i == store.me) ? (p = !1,
                             g = n) : (n == i) && (widHelper.isGroup(n) || widHelper.isBroadcast(n)) ? (p = !0,
-                                g = n) : L(l(), [n, i, o, me].join()),
+                                g = n) : L(l(), [n, i, o, store.me].join()),
                 void 0 !== p && (this.fromMe = p),
                 g && (this.remote = g),
                 o && (this.id = o)
@@ -77,7 +77,7 @@ export default class MsgKey {
                 d = j.participan;
             // if (!(g instanceof Wid) || d && !(d instanceof Wid))
             //     throw new Error("MsgKey error: something's not a wid: remote:".concat(String(g), " p:").concat(String(d)));
-            (me == g) && (u = p ? "out" : "in"),
+            (store.me == g) && (u = p ? "out" : "in"),
                 void 0 !== p && (this.fromMe = p),
                 g && (this.remote = g),
                 o && (this.id = o)

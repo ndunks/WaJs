@@ -1,59 +1,100 @@
-import { BinAttr, BinAttrUser, BinAttrChat, Chat } from "./whatsapp/interfaces";
-import { WebMessageInfo } from "./whatsapp_pb";
+import { BinAttr, BinAttrUser, BinAttrChat, Chat, WhatsAppServerMsgConn, ChatMessage } from "./whatsapp/interfaces";
 import { Color } from "./utils";
 import { widHelper } from "./whatsapp/helper";
-
-// Mocked
-const me = '6285726501017@c.us'
-const chats: { [key: string]: WaChat } = Object.create(null)
-
-// Got from preempt
-export const chatList: Chat[] = []
-export const contacts: BinAttrUser[] = []
-
+import { WebMessageInfo } from "./whatsapp_pb";
 //const chats = new Map<Wid,WaChat>()
 type addChatKind = 'relay' | 'update' | 'last' | 'before' | 'after' | 'unread'
-
 export function msgGetTarget(e) {
-    return (e.from == me) ? e.to : e.from
+    return (e.from == store.me) ? e.to : e.from
 }
 
-interface WaChat {
-    meta?: BinAttr
-    wid: string
-    recent: boolean
-    msgs: WebMessageInfo.AsObject[]
-}
 
-function getUnreadChatList() {
-    return chatList.filter(c => c.count)
-}
-
-function getChatGroupList() {
-    return chatList.filter(c => widHelper.isGroup(c.jid))
-}
-
-function storeChats(chat: WaChat, kind: addChatKind) {
-    if (!chat.wid)
-        throw new Error("StoreChat no WID");
-    if (chats[chat.wid]) {
-        //L('Exists', chat.wid, chat.msgs && chat.msgs.length || '')
-        if (chat.msgs) {
-            chats[chat.wid].msgs.push(...chat.msgs)
+export class StoreChat implements Chat {
+    t: number = 0;
+    unreadCount: number = 0;
+    spam: boolean = false;
+    modify_tag: number;
+    messages: ChatMessage[] = [];
+    name: string;
+    jid: string;
+    addMessage(msg: ChatMessage) {
+        if (msg.ack < 2) {
+            L('Unread', this.jid, msg.message.conversation)
         }
-    } else {
-        if (!chat.msgs)
-            chat.msgs = []
-        chats[chat.wid] = chat
+        this.messages.push(msg)
     }
-}
-function getRecentChats() {
-    return Object.values(chats).filter(v => v.recent)
+
 }
 
-function dumpChats() {
-    for (let id in chats) {
-        L(Color.y(id), chats[id].msgs.length, chats[id].msgs[0].message && chats[id].msgs[0].message.conversation)
+class Store {
+    // Got from preempt
+    private contacts: { [jid: string]: BinAttrUser } = Object.create(null)
+    private chats: { [jid: string]: StoreChat } = Object.create(null)
+    /** This number xxxx@c.us,same as this.conn.jid is our number */
+    private conn: WhatsAppServerMsgConn = Object.create(null)
+
+    get me() {
+        return this.conn.wid
     }
+
+    storeConn(conn: WhatsAppServerMsgConn) {
+        this.conn = Object.assign(this.conn, conn)
+    }
+
+    storeContact(value: BinAttrUser) {
+        const found = this.contacts[value.jid] || {}
+        this.contacts[value.jid] = Object.assign(found, value)
+    }
+
+    storeChat(value: Partial<Chat>) {
+        if (!value.jid) {
+            L('storeChat no jid!', value, new Error().stack)
+            return null
+        }
+        const found = this.chats[value.jid]
+        if (!found) {
+            this.chats[value.jid] = Object.assign(new StoreChat(), value)
+        } else {
+            this.chats[value.jid] = Object.assign(found, value)
+        }
+        return this.chats[value.jid]
+    }
+
+    getChat(jid: string) {
+        return this.chats[jid] || this.storeChat({ jid })
+    }
+
+    /** Return chats that have unread messages */
+    getUnreadChats() {
+        return Object.values(this.chats).filter(c => c.unreadCount)
+    }
+
+    getChatGroupList() {
+        return Object.values(this.chats).filter(c => widHelper.isGroup(c.jid))
+    }
+
+    // storeChats(chat: WaChat, kind: addChatKind) {
+    //     if (!chat.wid)
+    //         throw new Error("StoreChat no WID");
+
+    //     if (kind == 'last') {
+    //         L(kind, chat)
+    //     }
+
+    //     if (this.chats[chat.wid]) {
+    //         //L('Exists', chat.wid, chat.msgs && chat.msgs.length || '')
+    //         if (chat.msgs) {
+    //             this.chats[chat.wid].msgs.push(...chat.msgs)
+    //         }
+    //     } else {
+    //         if (!chat.msgs)
+    //             chat.msgs = []
+    //         this.chats[chat.wid] = chat
+    //     }
+    // }
 }
-export { me, storeChats, getRecentChats, dumpChats, getUnreadChatList }
+
+const store = new Store()
+export default store;
+
+

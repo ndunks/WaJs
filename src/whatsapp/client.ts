@@ -49,9 +49,11 @@ export default class Client {
         },
         challenge: (args: WhatsAppServerMsgCmdChallenge) => {
             L('Handling challenge');
-            const signed = this.sign(Buffer.from(args.challenge, 'base64'))
+            let data = Buffer.from(args.challenge, 'base64')
+            const sign = createHmac('sha256', this.config.macKey).update(data).digest()
+            data = Buffer.concat([sign, data])
             return this.ws.sendCmd('admin', 'challenge',
-                signed.toString('base64'),
+                data.toString('base64'),
                 this.config.tokens.server,
                 this.config.clientId)
                 .then(
@@ -218,14 +220,9 @@ export default class Client {
                 break;
             default:
                 this.serverData[cmd] = params[0]
-                L(Color.r('handleServerMessage:'), cmd, params)
+                L(Color.r('unhandleServerMessage:'), cmd, params)
                 break;
         }
-    }
-
-    sign(data: Buffer) {
-        const sign = createHmac('sha256', this.config.macKey).update(data).digest()
-        return Buffer.concat([sign, data])
     }
 
     close() {

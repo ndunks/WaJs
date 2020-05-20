@@ -1,5 +1,5 @@
-import { testHelperLoadWa, testHelperSequential, testHelperDisconnectWa } from "./helper";
-import { chatList, getUnreadChatList } from "../store";
+import { testHelperLoadWa, testHelperSequential } from "./helper";
+
 
 export default function () {
     return testHelperLoadWa().then(

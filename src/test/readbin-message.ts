@@ -3,7 +3,7 @@ import { readNode } from "../whatsapp/binary/reader";
 import assert from "assert";
 import "../whatsapp_pb"
 import { WANode } from "../whatsapp/interfaces";
-import { dumpChats } from "../store";
+
 import { handleActionMsg } from "../whatsapp/parser";
 import BinaryInputStream from "../whatsapp/binary/input-stream";
 
@@ -35,7 +35,7 @@ for (const file of files) {
     }
     //break;
 }
-dumpChats()
+//dumpChats()
 //const recents = getRecentChats()
 //assert.equal(addlastLength, recents.length)
 // recents.slice(0, 10).forEach(

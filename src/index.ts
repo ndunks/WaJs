@@ -1,6 +1,6 @@
 import WhatsApp from "./whatsapp";
 import { Color } from "./utils";
-import { getUnreadChatList } from "./store";
+import store from "./store";
 
 ///@ts-ignore
 global.L = console.log
@@ -19,7 +19,7 @@ wa.connect().then(
 ).catch(err => console.error(err))
 
 wa.on('initialized', () => {
-    L('::initialized Unread:', getUnreadChatList().length)
+    L('::initialized Unread:', store.getUnreadChats().length)
 })
 wa.on('Msg', (data) => {
     L(Color.m('::'), 'Msg', data)

@@ -1,17 +1,22 @@
-import { BinNode, BinAttr } from "./interfaces";
+import { BinNode, BinAttr, ChatMessage } from "./interfaces";
 import { nodeHelper } from "./binary/helper";
 import { Color } from "../utils";
-import { msgGetTarget, storeChats, me } from "../store";
+
 
 import { WebMessageInfo } from "../whatsapp_pb";
+import store from "../store";
 // Refs on app2.{hash}.js search for "handleActionMsg"
 export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
+
+    let msg: WebMessageInfo.AsObject
+    L(Color.b("<< Action"), attr)
+
     switch (attr.add) {
         // Realtime new message?
         case "relay":
         case "update":
-            const o = parseMsg(childs[0], "relay") as WebMessageInfo.AsObject
-            if (!o) {
+            msg = parseMsg(childs[0], "relay") as WebMessageInfo.AsObject
+            if (!msg) {
                 L(Color.r("<< Action IGNORED"), attr.add, attr, childs)
                 return
             }
@@ -27,21 +32,34 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             //     chat: s,
             //     msg: o
             // }])
-            L(Color.b("<< Action"), attr.add, o.key, o.message)
-            storeChats({
-                recent: true,
-                wid: o.key.remotejid,
-                msgs: [o]
-            }, attr.add)
+            L(attr.add, msg.key.id, msg.key.participant || msg.key.remotejid)
+            store.getChat(msg.key.remotejid).addMessage({
+                key: msg.key,
+                direction: msg.key.fromme ? 'out' : 'out',
+                message: msg.message,
+                ack: 1,
+            })
+            // storeChats({
+            //     recent: true,
+            //     wid: o.key.remotejid,
+            //     msgs: [o]
+            // }, attr.add)
             return 1
         case "last":
             const d = childs.slice(0, 4).map(c => parseMsg(c, "last"))
-            for (let webMsg of d as WebMessageInfo.AsObject[]) {
-                storeChats({
-                    recent: true,
-                    wid: webMsg.key.remotejid,
-                    msgs: [webMsg]
-                }, attr.add)
+            for (msg of d as WebMessageInfo.AsObject[]) {
+                store.getChat(msg.key.remotejid).addMessage({
+                    key: msg.key,
+                    direction: msg.key.fromme ? 'out' : 'out',
+                    message: msg.message,
+                    ack: 2,
+                    recent: true
+                })
+                // storeChats({
+                //     recent: true,
+                //     wid: webMsg.key.remotejid,
+                //     msgs: [webMsg]
+                // }, attr.add)
             }
             // for (let f = 0; f < d.length; f++) {
             //     let l = {
@@ -85,6 +103,16 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             //     msgs: h,
             //     //binarySize: t
             // }])
+            const chat = store.getChat(h[0].key.remotejid)
+            h.forEach(msg => {
+                chat.addMessage({
+                    key: msg.key,
+                    direction: msg.key.fromme ? 'out' : 'out',
+                    message: msg.message,
+                    ack: attr.add == 'unread' ? 1 : 2,
+                })
+            })
+            /* 
             storeChats({
                 recent: false,
                 wid: h[0].key.remotejid,
@@ -92,7 +120,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             }, attr.add)
             if (attr.add == 'unread') {
                 L('GOT UNREAD!', h.map(v => v.message))
-            }
+            } */
             return h.length
         default:
             L('Handle action not known:', attr.add)
@@ -126,7 +154,6 @@ function parseMsgMessage(node: BinNode, kind: string) {
     else
         L('parseMsgMessage: not a buffer', new Error().stack)
 }
-
 
 export function parseMsg(node: BinNode, kind: string) {
     switch (node[0]) {
