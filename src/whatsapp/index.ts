@@ -8,11 +8,13 @@ import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
 import { handleActionMsg } from "./parser";
-import { contacts, chatList } from "../store";
+import store from "../store";
 
 
 class WhatsApp extends EventEmitter {
     client: Client
+    private isInitialized = false
+
     constructor(authFile = '.auth') {
         super()
         this.client = new Client(authFile, this)
@@ -112,23 +114,27 @@ class WhatsApp extends EventEmitter {
     }
 
     binaryHandle_user(attr: BinAttrUser, childs) {
-        contacts.push(attr)
+        store.storeContact(attr)
     }
 
     binaryHandle_chat(attr: BinAttrChat, childs) {
         const chat: Chat = {
-            count: parseInt(attr.count),
+            unreadCount: parseInt(attr.count),
             jid: attr.jid,
             modify_tag: parseInt(attr.modify_tag),
             name: attr.name,
             spam: attr.spam == 'true',
             t: parseInt(attr.t)
         }
-        chatList.push(chat)
+        store.storeChat(chat)
     }
 
     binaryHandle_action(attr: BinAttrChat, childs) {
         handleActionMsg(attr, childs)
+        if (!this.isInitialized && attr.last == 'true') {
+            this.isInitialized = true
+            this.emit('initialized')
+        }
     }
 
     // binaryHandle_message(attr: BinAttrChat, data) {

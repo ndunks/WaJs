@@ -20,7 +20,6 @@ export class WASocket {
     private shortTagBase: string = `${Math.floor(Date.now() / 1000) % 1000}`
     /** For detection iddle time after initial setup */
     public lastReceived: number
-    private waitInitialized: NodeJS.Timer
     private watchdogTimer: NodeJS.Timer
 
     constructor(private wa: WhatsApp, private config: WhatsAppClientConfig
@@ -113,22 +112,6 @@ export class WASocket {
                     if (id.indexOf('preempt') === 0) {
                         logs.push(parsed[1] && parsed[1].type || '???')
                         emitEvents = ['preempt', parsed]
-                        if (!this.waitInitialized) {
-                            this.waitInitialized = setInterval(
-                                () => {
-                                    if ((Date.now() - this.lastReceived) < 700)
-                                        return // Not now
-
-                                    clearInterval(this.waitInitialized)
-                                    delete this.waitInitialized
-                                    L(Color.y('INITIALIZED'))
-                                    this.watchdogTimer = setInterval(this.watchdog, 5000)
-                                    this.wa.emit('initialized')
-
-                                },
-                                700
-                            )
-                        }
                     } else {
                         // I dont know to handle it
                         logs.push(Color.r('Prefixed with p but not preempt!'))
