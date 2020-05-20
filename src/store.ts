@@ -59,7 +59,7 @@ class Store {
 
     storeConn(conn: WhatsAppServerMsgConn) {
         this.conn = Object.assign(this.conn, conn)
-        L('store.conn', this.conn)
+        //L('store.conn', this.conn)
     }
 
     storeContact(value: BinAttrUser) {

@@ -17,6 +17,10 @@ export default function () {
                     // }
                 }
             )
+            // send message
+            wa.sendTextMessage('6285726501018@c.us', 'Test lagi hee..').then(
+                r => console.log('sendTextMessage', r)
+            )
             //store.dump()
         }
     )

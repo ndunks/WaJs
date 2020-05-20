@@ -1,5 +1,6 @@
 import Client from "./client";
 import { EventEmitter } from "events";
+import { randomBytes } from "crypto";
 import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
     BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, BinAttr, BinNodeTags, Chat, ChatMessage
@@ -9,6 +10,7 @@ import * as fs from "fs";
 import "../whatsapp_pb"
 import { handleActionMsg } from "./parser";
 import store, { StoreChat } from "../store";
+import { Message, MessageKey, WebMessageInfo } from "../whatsapp_pb";
 
 
 class WhatsApp extends EventEmitter {
@@ -32,7 +34,37 @@ class WhatsApp extends EventEmitter {
         this.client.close()
     }
 
-    sendTextMessage(wid: string, message) {
+    createMessageId() {
+        let byteMap = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70]
+        let randBytes = randomBytes(8)
+
+        let result = new Array(16), randByte, randIdx = 0
+
+        for (let idx = 0; randIdx < randBytes.length; randIdx++, idx += 2) {
+            randByte = randBytes[randIdx];
+            result[idx] = byteMap[randByte >> 4]
+            result[idx + 1] = byteMap[15 & randByte]
+        }
+        return "3EB0" + String.fromCharCode.apply(String, result)
+    }
+
+    sendTextMessage(jid: string, message) {
+        const msg = new Message()
+        const key = new MessageKey()
+        const webMsg = new WebMessageInfo()
+        key.setId(this.createMessageId())
+        key.setRemotejid(jid)
+        key.setFromme(true)
+        msg.setConversation(message)
+        webMsg.setKey(key)
+        webMsg.setMessage(msg)
+        webMsg.setMessagetimestamp(Math.floor(Date.now() / 1000))
+        const node = this.client.actionNode("relay", [
+            ["message", null, webMsg.serializeBinary()]
+        ])
+        L('sendTextMessage', node)
+        //return Promise.resolve(true)
+        return this.client.ws.sendNode(node)
         /*
         [
             "action",

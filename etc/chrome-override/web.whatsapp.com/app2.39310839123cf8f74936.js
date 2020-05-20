@@ -46968,6 +46968,7 @@
             value: !0
         }),
         t.sendMsgRecord = function(e) {
+            console.log('sendMsgRecord', e)
             var t = Promise.resolve();
             r.default.supportsFeature(r.default.F.MD_BACKEND) || (t = o.default.msgCreateRecord(e).then((function(e) {
                 return 200 !== e.status ? Promise.reject(new i.ServerStatusCodeError(e.status)) : e

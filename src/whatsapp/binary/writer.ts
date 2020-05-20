@@ -123,13 +123,13 @@ export function writeAttributes(e: BinaryOutputStream, attr: BinAttr) {
     }
 }
 
-export function writeChildren(bos: BinaryOutputStream, nodes: BinNode[]) {
+export function writeChildren(bos: BinaryOutputStream, nodes: Uint8Array | BinNode[]) {
     let a: number;
     if (nodes)
         if ("string" == typeof nodes) {
             writeString(bos, nodes, !0);
         }
-        else if (nodes instanceof ArrayBuffer) {
+        else if (nodes instanceof Uint8Array) {
             if ((a = nodes.byteLength) >= 4294967296) {
                 throw new Error("invalid children; too long (len = " + a)
             }

@@ -28,8 +28,8 @@ export default class BinaryOutputStream {
     pushByte(e: number) {
         this.pushBuffer(Buffer.from([e]))
     }
-    pushBytes(e: ArrayBuffer) {
-        if (!(e instanceof ArrayBuffer))
+    pushBytes(e: Uint8Array) {
+        if (!(e instanceof Uint8Array))
             throw new Error("invalid byte buffer");
         this.pushBuffer(Buffer.from(e))
     }

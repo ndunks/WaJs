@@ -175,7 +175,7 @@ export interface BinNode extends WANode {
     /** Attributes */
     1: BinAttr
     /** Childs */
-    2?: BinNode[]
+    2?: Uint8Array | BinNode[]
 }
 /** Known response types */
 export interface BinAttrResponse extends BinAttr {
