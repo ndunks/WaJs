@@ -11,7 +11,7 @@ export function msgGetTarget(e) {
 
 export class StoreChat implements Chat {
     t: number = 0;
-    unreadCount: number = 0;
+    unread: number = 0;
     spam: boolean = false;
     modify_tag: number;
     messages: ChatMessage[] = [];
@@ -36,9 +36,30 @@ class Store {
     get me() {
         return this.conn.wid
     }
+    get name(){
+        return this.conn.pushname
+    }
+    get device(){
+        return `${this.conn.phone.device_manufacturer} ${this.conn.phone.device_model}`
+    }
+    dump(dir: string = 'tmp') {
+        const fs = require('fs')
+        const util = require('util')
+        fs.writeFileSync(
+            `${dir}/store.contacts.js`,
+            `let contacts = ${util.inspect(Object.values(this.contacts), { maxArrayLength: null, breakLength: Infinity, showHidden: false, depth: 2, compact: false })}`,
+            'utf8'
+        )
+        fs.writeFileSync(
+            `${dir}/store.chats.js`,
+            `let chats = ${util.inspect(Object.values(this.chats), { maxArrayLength: null, breakLength: Infinity, showHidden: false, depth: 5, compact: false })}`,
+            'utf8'
+        )
+    }
 
     storeConn(conn: WhatsAppServerMsgConn) {
         this.conn = Object.assign(this.conn, conn)
+        L('store.conn', this.conn)
     }
 
     storeContact(value: BinAttrUser) {
@@ -64,9 +85,9 @@ class Store {
         return this.chats[jid] || this.storeChat({ jid })
     }
 
-    /** Return chats that have unread messages */
+    /** Return chats that have received and unread messages */
     getUnreadChats() {
-        return Object.values(this.chats).filter(c => c.unreadCount)
+        return Object.values(this.chats).filter(c => c.unread)
     }
 
     getChatGroupList() {

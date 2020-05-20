@@ -27,7 +27,7 @@ for (const file of files) {
     assert.strictEqual(Array.isArray(result[2]), true)
     let res;
     assert.doesNotThrow(() => {
-        res = handleActionMsg(result[1], result[2])
+        res = handleActionMsg.call( undefined , result[1], result[2])
     })
     L('add', result[1].add, res)
     if (result[1].add == 'last') {

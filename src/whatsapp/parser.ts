@@ -5,8 +5,9 @@ import { Color } from "../utils";
 
 import { WebMessageInfo } from "../whatsapp_pb";
 import store from "../store";
+import WhatsApp from ".";
 // Refs on app2.{hash}.js search for "handleActionMsg"
-export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
+export function handleActionMsg(this:WhatsApp, attr: BinAttr, childs: BinNode[]) {
 
     let msg: WebMessageInfo.AsObject
     L(Color.b("<< Action"), attr)
@@ -35,7 +36,7 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             L(attr.add, msg.key.id, msg.key.participant || msg.key.remotejid)
             store.getChat(msg.key.remotejid).addMessage({
                 key: msg.key,
-                direction: msg.key.fromme ? 'out' : 'out',
+                direction: msg.key.fromme ? 'out' : 'in',
                 message: msg.message,
                 ack: 1,
             })
@@ -50,9 +51,9 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             for (msg of d as WebMessageInfo.AsObject[]) {
                 store.getChat(msg.key.remotejid).addMessage({
                     key: msg.key,
-                    direction: msg.key.fromme ? 'out' : 'out',
+                    direction: msg.key.fromme ? 'out' : 'in',
                     message: msg.message,
-                    ack: 2,
+                    //ack: 3,
                     recent: true
                 })
                 // storeChats({
@@ -107,9 +108,9 @@ export function handleActionMsg(attr: BinAttr, childs: BinNode[]) {
             h.forEach(msg => {
                 chat.addMessage({
                     key: msg.key,
-                    direction: msg.key.fromme ? 'out' : 'out',
+                    direction: msg.key.fromme ? 'out' : 'in',
                     message: msg.message,
-                    ack: attr.add == 'unread' ? 1 : 2,
+                    //ack: attr.add == 'unread' ? 1 : 2,
                 })
             })
             /* 

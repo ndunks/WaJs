@@ -10,17 +10,18 @@ global.E = console.error
 const wa = new WhatsApp();
 wa.connect().then(
     info => {
-        console.log('Connected to whatsapp:',
-            info.pushname,
-            info.phone.device_manufacturer,
-            info.phone.device_model
-        );
+        L('Connected to whatsapp:', Color.y(`${store.name} ${store.device}`));
     }
 ).catch(err => console.error(err))
 
 wa.on('initialized', () => {
     L('::initialized Unread:', store.getUnreadChats().length)
 })
+
+wa.on('new-message', (msg) => {
+    L(Color.m('::'), 'new-message', msg.key.remotejid, msg.message.conversation)
+})
+
 wa.on('Msg', (data) => {
     L(Color.m('::'), 'Msg', data)
 })

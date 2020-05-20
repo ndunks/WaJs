@@ -2,13 +2,13 @@ import Client from "./client";
 import { EventEmitter } from "events";
 import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
-    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, BinAttr, BinNodeTags, Chat
+    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, BinAttr, BinNodeTags, Chat, ChatMessage
 } from "./interfaces";
 import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
 import { handleActionMsg } from "./parser";
-import store from "../store";
+import store, { StoreChat } from "../store";
 
 
 class WhatsApp extends EventEmitter {
@@ -119,7 +119,7 @@ class WhatsApp extends EventEmitter {
 
     binaryHandle_chat(attr: BinAttrChat, childs) {
         const chat: Chat = {
-            unreadCount: parseInt(attr.count),
+            unread: parseInt(attr.count),
             jid: attr.jid,
             modify_tag: parseInt(attr.modify_tag),
             name: attr.name,
@@ -130,7 +130,7 @@ class WhatsApp extends EventEmitter {
     }
 
     binaryHandle_action(attr: BinAttrChat, childs) {
-        handleActionMsg(attr, childs)
+        handleActionMsg.call(this, attr, childs)
         if (!this.isInitialized && attr.last == 'true') {
             this.isInitialized = true
             this.emit('initialized')
@@ -154,6 +154,8 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     on(event: 'open', listener: () => void): this;
     /** After login and received some initial data from server */
     on(event: 'initialized', listener: () => void): this;
+    /** No new Message arrived */
+    on(event: 'new-message', listener: (msg: ChatMessage) => void): this;
     on(event: 'disconnect', listener: (kind: 'replaced') => void): this;
     /** Login in another web.whatsapp */
     on(event: 'replaced', listener: () => void): this;

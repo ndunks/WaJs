@@ -10,6 +10,7 @@ import { generateKeyPair, decryptEncryptionKeys } from "./secure";
 import authRestoreTakeOver from "./auth/restore-takeover";
 import WASocket from "./wa-socket";
 import WhatsApp from ".";
+import store from "../store";
 
 export default class Client {
     /** This app name */
@@ -173,7 +174,8 @@ export default class Client {
 
     private handleWhatsAppConn(info: WhatsAppServerMsgConn) {
         if (!this.onReady) {
-            return L('Got Conn but no handler, ignore it', info)
+            store.storeConn(info)
+            return L('Got Conn but no handler, ignore it')
         }
         // On restored session is not contain secret
         if (info.secret) {
@@ -193,7 +195,7 @@ export default class Client {
         }
         // Save creds
         configStore(this.authFile, this.config)
-
+        store.storeConn(info)
         // call on ready
         this.onReady(info);
     }
