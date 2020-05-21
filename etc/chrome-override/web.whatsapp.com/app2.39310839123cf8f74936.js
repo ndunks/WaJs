@@ -12919,8 +12919,8 @@
             }
             ,
             this.writeToken = function(e, t) {
-                if (t < 245)
-                    e.pushByte(t);
+                if (t < 245){
+                    e.pushByte(t);                }
                 else if (t <= 500)
                     throw new Error("invalid token")
             }
@@ -79093,7 +79093,7 @@
             e
         }
         e.exports = function(e) {
-            var t, a = {}, n = e.nibbleEncode;
+            var t, a = {}, n = e.nibbleEncode,singleBytes=e.singleByte;
             for (t = 0; t < e.singleByte.length; t++)
                 e.singleByte[t] && (a[e.singleByte[t]] = t);
             for (t = 0; t < e.doubleByte.length; t++)
@@ -79188,8 +79188,10 @@
             }
             ,
             this.writeToken = function(e, t) {
-                if (t < 245)
+                if (t < 245){
                     e.pushByte(t);
+                    console.log('writeToken', t, singleBytes[t], e.buf.size())
+                }
                 else if (t <= 500)
                     throw new Error("invalid token")
             }
@@ -80879,8 +80881,9 @@
                 console.log('BINWRITE', e)
                 return Promise.callSynchronously((function() {
                     var t = new r;
-                    return s.writeNode(t, e),
-                    f.encrypt(t.toBuffer())
+                    s.writeNode(t, e);
+                    console.log('BINWRITE BUFF', t);
+                    return f.encrypt(t.toBuffer())
                 }
                 ))
             }

@@ -4,7 +4,7 @@ import { Color } from "../utils";
 
 export default function () {
     return testHelperLoadWa().then(
-        wa => {
+        async wa => {
             // console.log(Color.b('>> UNREADS <<'));
             // const unreads = store.getUnreadChats().forEach(
             //     c => {
@@ -18,6 +18,7 @@ export default function () {
             //     }
             // )
             // send message
+
             wa.sendTextMessage('6285726501018@s.whatsapp.net', 'Test').then(
                 r => console.log('sendTextMessage', r)
             )
