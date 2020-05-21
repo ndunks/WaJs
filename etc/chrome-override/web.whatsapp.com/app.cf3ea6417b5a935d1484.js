@@ -36511,6 +36511,8 @@
                 }
                 ,
                 this.socket = a
+                console.log(this.socket,this.url)
+                console.log('ON SOCKET OPEN', e)
             }
             )).cancellable().catch((function(e) {
                 if (LOG(2)(A(), this.id, e),

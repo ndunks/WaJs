@@ -134,7 +134,7 @@ export default class Client {
                     // INIT
                     this.ws.sendCmd<CmdInitResponse>('admin', 'init',
                         this.version.split('.').map(v => parseInt(v)),
-                        [this.clientName, platform(), arch()],
+                        [/* this.clientName */'Linux', 'Chrome'/* platform() */, 'x86_64'/* arch() */],
                         this.config.clientId,
                         true
                     ).then(response => {

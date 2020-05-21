@@ -163,7 +163,7 @@ export class WASocket {
             }
         })
     }
-    private stopWatchdog = () => {
+    stopWatchdog = () => {
         if (this.watchdogTimer) {
             clearInterval(this.watchdogTimer)
             this.watchdogTimer = null
@@ -185,19 +185,20 @@ export class WASocket {
         }
         return new Promise<T>(
             (resolve, reject) => {
-                let type;
+                let taggedMessage: string | Buffer;
+                const options: { mask?: boolean; binary?: boolean; compress?: boolean; fin?: boolean } = {}
                 if (typeof message == 'string') {
-                    message = `${tag},${message}`
-                    type = 'STR'
+                    taggedMessage = `${tag},${message}`
+                    options.binary = false
                 } else {
                     // encrypt
                     message = hmacEncrypt(this.config.aesKey, this.config.macKey, message)
-                    message = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
-                    type = 'BIN'
+                    taggedMessage = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
+                    options.binary = true
                 }
                 commandTagHandlers.set(tag, { sentMessage: message, callback: resolve, hint })
-                L(Color.y('>> ' + tag), Color.b(type), hint, message.length)
-                this.sock.send(message, err => err ? reject(err) : null)
+                L(Color.y('>> ' + tag), Color.b(options.binary ? 'BIN' : 'STR'), hint, taggedMessage.length)
+                this.sock.send(taggedMessage, options, err => err ? reject(err) : null)
             }
         )
     }
@@ -222,7 +223,6 @@ export class WASocket {
         const bos = new BinaryOutputStream()
         writeNode(bos, node)
         const buf = bos.toBuffer()
-        //L('sendNode', node, buf)
         return this.send(
             buf,
             'node:' + node[0],

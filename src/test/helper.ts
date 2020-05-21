@@ -23,14 +23,16 @@ export function testHelperLoadWa(): Promise<WhatsApp> {
 
 export function testHelperDisconnectWa(afterSecond: number = 1) {
     return new Promise((res, rej) => {
-        setTimeout(() => {
+        // just disable watchdog
+        wa_instance.client.ws.stopWatchdog()
+        /* setTimeout(() => {
             try {
                 wa_instance.close()
                 res(true)
             } catch (error) {
                 rej(error)
             }
-        }, afterSecond * 1000)
+        }, afterSecond * 1000) */
     })
 }
 
