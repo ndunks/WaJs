@@ -41,10 +41,9 @@ function AESPadding(data: Buffer) {
     //return s + (bs - len(s) % bs) * chr(bs - len(s) % bs);
 }
 export function AESEncrypt(key: Buffer, data: Buffer) {
-    data = AESPadding(data)
     // Create IV
     const iv = crypto.randomBytes(16);
-    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv).setAutoPadding(false)
+    const cipher = crypto.createCipheriv('aes-256-cbc', key, iv).setAutoPadding(true)
     const bufs = Buffer.concat([iv, cipher.update(data), cipher.final()])
     return bufs
 }

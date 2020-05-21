@@ -1,9 +1,12 @@
 import assert from "assert";
+import crypto from "crypto";
 import { BinNode } from "../whatsapp/interfaces";
 import { writeNode } from "../whatsapp/binary/writer";
 import BinaryOutputStream from "../whatsapp/binary/output-stream";
 import { readNode } from "../whatsapp/binary/reader";
 import BinaryInputStream from "../whatsapp/binary/input-stream";
+import { configLoad } from "../utils";
+import { AESEncrypt, AESDecrypt, hmacDecrypt } from "../whatsapp/secure";
 
 let node1: BinNode = [
     'user',
@@ -22,6 +25,28 @@ assert.ok(buf)
 let bis = new BinaryInputStream(buf)
 let node2 = readNode(bis)
 assert.deepEqual(node1, node2)
+const authFile = '.auth';
+const cfg = configLoad(authFile)
+
+function correction(node: BinNode, correctBin: number[], hint: string, encryptedLength) {
+    let bos = new BinaryOutputStream()
+    writeNode(bos, node)
+    assert.equal(bos.size, correctBin.length, `${hint}: length missmatch`)
+    assert.deepEqual(bos.buf, Buffer.from(correctBin), `${hint}: Node buffer differ`)
+
+    // Encrypt decrypt
+    let encrypted = AESEncrypt(cfg.aesKey, bos.buf)
+    assert.deepEqual(encrypted.length, encryptedLength)
+    assert.notDeepEqual(encrypted, bos.buf)
+    let decrypted = AESDecrypt(cfg.aesKey, encrypted.slice(0, 16), encrypted.slice(16))
+    assert.deepEqual(bos.buf, decrypted)
+    const hmac = crypto.createHmac('sha256', cfg.macKey).update(encrypted).digest()
+    let hmacEnrypted = Buffer.concat([hmac, encrypted])
+    assert.equal(hmacEnrypted.length, encryptedLength + hmac.length)
+    let revert = hmacDecrypt(cfg.aesKey,cfg.macKey, hmacEnrypted )
+    assert.deepEqual(revert, bos.buf)
+}
+
 
 // query contacts
 let node: BinNode = [
@@ -40,11 +65,7 @@ let correctBin = [
     1,
     49,
 ]
-bos = new BinaryOutputStream()
-writeNode(bos, node)
-assert.equal(bos.size, correctBin.length)
-let resultBin = Uint8Array.from(bos.buf)
-assert.deepEqual(resultBin, Uint8Array.from(correctBin))
+correction(node, correctBin, 'contacts', 32)
 
 
 // qery chat
@@ -64,11 +85,7 @@ correctBin = [
     1,
     49,
 ]
-bos = new BinaryOutputStream()
-writeNode(bos, node)
-assert.equal(bos.size, correctBin.length)
-resultBin = Uint8Array.from(bos.buf)
-assert.deepEqual(resultBin, Uint8Array.from(correctBin))
+correction(node, correctBin, 'chat', 32)
 
 
 // query status
@@ -88,11 +105,7 @@ correctBin = [
     1,
     49,
 ]
-bos = new BinaryOutputStream()
-writeNode(bos, node)
-assert.equal(bos.size, correctBin.length)
-resultBin = Uint8Array.from(bos.buf)
-assert.deepEqual(resultBin, Uint8Array.from(correctBin))
+correction(node, correctBin, 'status', 32)
 
 
 // presence
@@ -130,8 +143,4 @@ correctBin = [
     91, // singleByteToken 91 type
     14, // singleByteToken 14 available
 ]
-bos = new BinaryOutputStream()
-writeNode(bos, node)
-assert.equal(bos.size, correctBin.length)
-resultBin = Uint8Array.from(bos.buf)
-assert.deepEqual(resultBin, Uint8Array.from(correctBin))
+correction(node, correctBin, 'presence', 48)

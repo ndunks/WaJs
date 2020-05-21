@@ -73747,11 +73747,14 @@
         Object.defineProperty(t, "__esModule", {
             value: !0
         }),
-        t.encryptAndMac = function(e, t, a) {
-            return (0,
-            o.aesCbcEncrypt)(e, new Uint8Array(a)).then((function(e) {
-                return new s.default(t).sign(e).then((function(t) {
-                    return r.default.build(t, e).readBuffer()
+        t.encryptAndMac = function(aesKey, macKey, data) {
+            //console.log('encryptAndMac',aesKey,macKey,data)
+            return o.aesCbcEncrypt(aesKey, new Uint8Array(data)).then(
+            (function(encrypted) {
+                return new s.default(macKey).sign(encrypted).then((function(sign) {
+                    var res = r.default.build(sign, encrypted).readBuffer()
+                    console.log('encryptAndMac',data,sign,encrypted, res)
+                    return res
                 }
                 ))
             }

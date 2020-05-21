@@ -196,11 +196,31 @@ export default class Client {
         // Save creds
         configStore(this.authFile, this.config)
         store.storeConn(info)
-        // call on ready
-        this.onReady(info);
-    }
 
-    private handleServerMessage(cmd: WhatsAppServerMsg, params: any[]) {
+        // call on ready
+        this.onReady(info)
+        // this.sendInitialQueries().then(
+        //     // call on ready
+        //     () => this.onReady(info)
+        // )
+    }
+    async sendInitialQueries() {
+        const does = [
+            ['queryContacts'],
+            ['queryChat'],
+            ['queryStatus'],
+            ['presence', 'available']
+        ]
+        for (let doo of does) {
+            let func = doo.shift()
+            await this.wa[func].apply(this.wa, doo).then(
+                res => {
+                    L(Color.m('>INITQUERY' + func), res)
+                }
+            )
+        }
+    }
+    private async handleServerMessage(cmd: WhatsAppServerMsg, params: any[]) {
         switch (cmd) {
             case 'Stream':
             case 'Props':

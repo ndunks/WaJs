@@ -211,7 +211,7 @@ export class WASocket {
     }
     sendBin<T = any>(cmd: string, attr: any, data?: any, hint?: string) {
         const msg = [cmd, attr, data]
-        console.log('sendBin', msg);
+        //console.log('sendBin', msg);
         return this.send<T>(
             Buffer.from(JSON.stringify(msg), 'ascii'),
             hint,
@@ -222,7 +222,7 @@ export class WASocket {
         const bos = new BinaryOutputStream()
         writeNode(bos, node)
         const buf = bos.toBuffer()
-        L('sendNode', node, buf)
+        //L('sendNode', node, buf)
         return this.send(
             buf,
             'node:' + node[0],

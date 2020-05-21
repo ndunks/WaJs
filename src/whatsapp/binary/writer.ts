@@ -3,6 +3,7 @@ import BinaryTag from "./tags";
 import { BinNode, BinAttr } from "../interfaces";
 import BinaryOutputStream from "./output-stream";
 import { widHelper } from "../helper";
+import { Color } from "../../utils";
 
 /** Reversed single bytes */
 let singleByteMaps = {};
@@ -36,8 +37,8 @@ export function writeString(bos: BinaryOutputStream, value: string, server?: boo
     let i
     let r
     let byteCode = singleByteMaps.hasOwnProperty(value) ? singleByteMaps[value] : undefined;
-    if ("c.us" !== value || server)
-        if (void 0 === byteCode) {
+    if ("c.us" !== value || server) {
+        if (undefined === byteCode) {
             if (value.indexOf("@") < 1)
                 writeStringRaw(bos, value);
             else
@@ -51,9 +52,9 @@ export function writeString(bos: BinaryOutputStream, value: string, server?: boo
             if (byteCode < BinaryTag.SINGLE_BYTE_MAX)
                 writeToken(bos, byteCode);
             else {
-                var f = byteCode - BinaryTag.SINGLE_BYTE_MAX;
-                switch (r = f % 256,
-                f >> 8) {
+                let f = byteCode - BinaryTag.SINGLE_BYTE_MAX;
+                r = f % 256
+                switch (f >> 8) {
                     case 0:
                         i = BinaryTag.DICTIONARY_0;
                         break;
@@ -73,6 +74,7 @@ export function writeString(bos: BinaryOutputStream, value: string, server?: boo
             writeToken(bos, i)
             writeToken(bos, r)
         }
+    }
     else
         writeToken(bos, singleByteMaps["s.whatsapp.net"])
     //}
@@ -103,9 +105,10 @@ export function writeJid(bos: BinaryOutputStream, rawJid: string) {
             writeString(bos, jid.server)
 }
 
-export function writeToken(e, t) {
-    if (t < 245)
+export function writeToken(e: BinaryOutputStream, t) {
+    if (t < 245) {
         e.pushByte(t);
+    }
     else if (t <= 500)
         throw new Error("invalid token")
 }
@@ -124,29 +127,30 @@ export function writeAttributes(e: BinaryOutputStream, attr: BinAttr) {
 }
 
 export function writeChildren(bos: BinaryOutputStream, nodes: Uint8Array | BinNode[]) {
+    if (!nodes) return
     let a: number;
-    if (nodes)
-        if ("string" == typeof nodes) {
-            writeString(bos, nodes, !0);
+
+    if ("string" == typeof nodes) {
+        writeString(bos, nodes, !0);
+    }
+    else if (nodes instanceof Uint8Array) {
+        if ((a = nodes.byteLength) >= 4294967296) {
+            throw new Error("invalid children; too long (len = " + a)
         }
-        else if (nodes instanceof Uint8Array) {
-            if ((a = nodes.byteLength) >= 4294967296) {
-                throw new Error("invalid children; too long (len = " + a)
-            }
-            a >= 1 << 20 ? (bos.pushByte(BinaryTag.BINARY_32),
-                bos.pushInt32(a)) : a >= 256 ? (bos.pushByte(BinaryTag.BINARY_20),
-                    bos.pushInt20(a)) : (bos.pushByte(BinaryTag.BINARY_8),
-                        bos.pushByte(a)),
-                bos.pushBytes(nodes)
-        } else {
-            if (!Array.isArray(nodes))
-                throw new Error("invalid children");
-            a = nodes.length
-            writeListStart(bos, a);
-            for (var n = 0; n < a; n++) {
-                writeNode(bos, nodes[n])
-            }
+        a >= 1 << 20 ? (bos.pushByte(BinaryTag.BINARY_32),
+            bos.pushInt32(a)) : a >= 256 ? (bos.pushByte(BinaryTag.BINARY_20),
+                bos.pushInt20(a)) : (bos.pushByte(BinaryTag.BINARY_8),
+                    bos.pushByte(a)),
+            bos.pushBytes(nodes)
+    } else {
+        if (!Array.isArray(nodes))
+            throw new Error("invalid children");
+        a = nodes.length
+        writeListStart(bos, a);
+        for (var n = 0; n < a; n++) {
+            writeNode(bos, nodes[n])
         }
+    }
 }
 
 export function writeListStart(bos: BinaryOutputStream, value: number) {

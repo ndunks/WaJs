@@ -34,6 +34,28 @@ class WhatsApp extends EventEmitter {
         this.client.close()
     }
 
+    queryContacts(){
+        const node = this.client.queryNode({type: 'contacts', kind: undefined})
+        return this.client.ws.sendNode(node)
+    }
+
+    queryChat(){
+        const node = this.client.queryNode({type: 'chat'})
+        return this.client.ws.sendNode(node)
+    }
+
+    queryStatus(){
+        const node = this.client.queryNode({type: 'status'})
+        return this.client.ws.sendNode(node)
+    }
+    
+    presence(type: 'available' | 'unavailable') {
+        const node = this.client.actionNode('set', [
+            ['presence', { type }, undefined]
+        ])
+        return this.client.ws.sendNode(node)
+    }
+
     createMessageId() {
         let byteMap = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70]
         let randBytes = randomBytes(8)
@@ -84,31 +106,6 @@ class WhatsApp extends EventEmitter {
             ]
             ]
          */
-    }
-
-    presence(type: 'available' | 'unavailable') {
-        const node = this.client.actionNode('set', [
-            ['presence', { type }, undefined]
-        ])
-        return this.client.ws.sendNode(node)
-        /*
-        [
-            "action",
-            {
-                "type": "set",
-                "epoch": "1"
-            },
-            [
-                [
-                "presence",
-                {
-                    "type": "available"
-                },
-                null
-                ]
-            ]
-            ]
-        */
     }
 
     markRead() {
