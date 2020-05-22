@@ -2,7 +2,7 @@ import { Message, MessageKey } from "../whatsapp_pb"
 
 export interface WidObj {
     user: string
-    server: string
+    server: 'c.us' | 'g.us' | 'broadcast' | string
     agent?: number
     device?: number
 }

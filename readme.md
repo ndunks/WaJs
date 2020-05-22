@@ -7,12 +7,12 @@ NodeJS implementation from great research [sigalor/whatsapp-web-reveng](https://
 - [X] Authentication QR Code
 - [X] Resume Session (takeover)
 - [X] Reading initial WS message
-- [ ] Sending presence state
-- [ ] Sending Message
-- [ ] Listen when got new message
+- [X] Sending presence state
+- [X] Sending Message
+- [X] Listen when got new message
 - [ ] Get All unread message
 - [ ] Mark read
-- [ ] Auto reply
+- [X] Auto reply
 
 ## Step Explanation
 - First send init command

@@ -173,9 +173,10 @@ export default class Client {
     }
 
     private handleWhatsAppConn(info: WhatsAppServerMsgConn) {
+        // Got Conn but no handler, ignore it
         if (!this.onReady) {
             store.storeConn(info)
-            return L('Got Conn but no handler, ignore it')
+            return
         }
         // On restored session is not contain secret
         if (info.secret) {
@@ -197,7 +198,6 @@ export default class Client {
         // Save creds
         configStore(this.authFile, this.config)
         store.storeConn(info)
-
         // call on ready
         this.onReady(info)
     }

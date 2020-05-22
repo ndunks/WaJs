@@ -11,7 +11,7 @@ import * as fs from "fs";
 import "../whatsapp_pb"
 import store from "../store";
 import { Message, MessageKey, WebMessageInfo } from "../whatsapp_pb";
-import { binaryOptions, createMessageId } from "./helper";
+import { binaryOptions, createMessageId, widHelper } from "./helper";
 
 
 class WhatsApp extends EventEmitter {
@@ -152,9 +152,27 @@ class WhatsApp extends EventEmitter {
                     return
                 }
                 if (!msg.key.fromme) {
-                    this.emit('new-message', msg)
+                    const jid = widHelper.parse(msg.key.remotejid)
+                    switch (jid.server) {
+                        case 'c.us':
+                            this.emit('new-user-message', msg)
+                            break;
+
+                        case 'g.us':
+                            this.emit('new-group-message', msg)
+                            break;
+                        case 'broadcast':
+                            if (jid.user == 'status') {
+                                this.emit('status-broadcast', msg)
+                                break;
+                            }
+                        default:
+                            L(Color.y('Unknown sender message'), jid, msg.message)
+                            break;
+                    }
+                } else {
+                    L(attr.add, msg.key, msg.message.conversation)
                 }
-                L(attr.add, msg.key.id, msg.key.participant || msg.key.remotejid)
                 store.getChat(msg.key.remotejid).addMessage({
                     key: msg.key,
                     direction: msg.key.fromme ? 'out' : 'in',
@@ -231,7 +249,9 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     /** After login and received some initial data from server */
     on(event: 'initialized', listener: () => void): this;
     /** No new Message arrived */
-    on(event: 'new-message', listener: (msg: WebMessageInfo.AsObject) => void): this;
+    on(event: 'new-user-message', listener: (msg: WebMessageInfo.AsObject) => void): this;
+    on(event: 'new-group-message', listener: (msg: WebMessageInfo.AsObject) => void): this;
+    on(event: 'status-broadcast', listener: (msg: WebMessageInfo.AsObject) => void): this;
     on(event: 'disconnect', listener: (kind: 'replaced') => void): this;
     /** Login in another web.whatsapp */
     on(event: 'replaced', listener: () => void): this;

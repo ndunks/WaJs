@@ -5,6 +5,15 @@ import { Color } from "../utils";
 export default function () {
     return testHelperLoadWa().then(
         async wa => {
+
+            wa.on('new-user-message', (msg) => {
+                L(Color.y('::new-user-message'), msg.key.remotejid, msg.message.conversation)
+                if (msg.message && msg.message.conversation) {
+                    //Auto reply
+                    wa.sendTextMessage(msg.key.remotejid, `You send ${msg.message.conversation}`)
+                }
+            })
+
             // console.log(Color.b('>> UNREADS <<'));
             const unreads = store.getUnreadChats().forEach(
                 c => {
@@ -15,6 +24,7 @@ export default function () {
                     } else {
                         console.log(c.messages.slice(idx).map(v => v.message.conversation))
                     }
+                    store.dump()
                 }
             )
             // send message

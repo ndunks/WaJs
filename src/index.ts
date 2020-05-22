@@ -18,8 +18,14 @@ wa.on('initialized', () => {
     L('::initialized Unread:', store.getUnreadChats().length)
 })
 
-wa.on('new-message', (msg) => {
-    L(Color.y('::new-message'), msg.key.remotejid, msg.message.conversation)
+wa.on('new-user-message', (msg) => {
+    L(Color.y('::new-user-message'), msg.key.remotejid, msg.message.conversation)
+})
+wa.on('status-broadcast', (msg) => {
+    L(Color.y('::status-broadcast'), msg.key.remotejid, msg.message.conversation)
+})
+wa.on('new-group-message', (msg) => {
+    L(Color.y('::new-group-message'), msg.key.remotejid, msg.message.conversation)
 })
 
 wa.on('Msg', (data) => {
