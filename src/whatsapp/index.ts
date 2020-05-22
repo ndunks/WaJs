@@ -1,46 +1,18 @@
 import Client from "./client";
 import { EventEmitter } from "events";
-import { randomBytes } from "crypto";
 import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
     BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, Chat, ChatMessage,
-    METRIC, EphemeralFlag
+    METRIC,
+    BinAttr
 } from "./interfaces";
 import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
 import { handleActionMsg } from "./parser";
-import store, { StoreChat } from "../store";
+import store from "../store";
 import { Message, MessageKey, WebMessageInfo } from "../whatsapp_pb";
-
-function binaryOptions(metric: METRIC, flagObj: EphemeralFlag = { ignore: true }) {
-    const bytes = new Uint8Array(2)
-    bytes[0] = metric
-    bytes[1] = 0
-    if (flagObj.ignore) {
-        bytes[1] |= (1 << 7)
-    }
-    if (flagObj.ackRequest) {
-        bytes[1] |= (1 << 6)
-    }
-    if (flagObj.available) {
-        bytes[1] |= (1 << 5)
-    }
-    if (flagObj.notAvailable) {
-        bytes[1] |= (1 << 4)
-    }
-    if (flagObj.expires) {
-        bytes[1] |= (1 << 3)
-    }
-    if (flagObj.skipOffline) {
-        bytes[1] |= (1 << 2)
-    }
-    if (!bytes[0]) {
-        L('Invalid metric', metric, METRIC[metric])
-    }
-    L('metricByte', bytes[0], 'flag', bytes[1].toString(2), bytes)
-    return bytes
-}
+import { binaryOptions, createMessageId } from "./helper";
 
 
 class WhatsApp extends EventEmitter {
@@ -64,51 +36,40 @@ class WhatsApp extends EventEmitter {
         this.client.close()
     }
 
-    queryContacts() {
-        const node = this.client.queryNode({ type: 'contacts', kind: undefined })
-        return this.client.ws.sendNode(node)
-    }
-
-    queryChat() {
-        const node = this.client.queryNode({ type: 'chat' })
+    query(obj: BinAttr) {
+        const node = this.client.queryNode(obj)
+        const metric = METRIC[`QUERY_${obj.type.toUpperCase()}`]
         return this.client.ws.sendNode(
             node,
             undefined,
-            binaryOptions(METRIC.QUERY_CHAT)
+            metric && binaryOptions(metric)
         )
     }
 
+    queryContacts() {
+        return this.query({ type: 'contacts', kind: undefined })
+    }
+
+    queryChat() {
+        return this.query({ type: 'chat' })
+    }
+
     queryStatus() {
-        const node = this.client.queryNode({ type: 'status' })
-        return this.client.ws.sendNode(node)
+        return this.query({ type: 'status' })
     }
 
     presence(type: 'available' | 'unavailable') {
         const node = this.client.actionNode('set', [
             ['presence', { type }, undefined]
         ])
-        return this.client.ws.sendNode(node)
-    }
-
-    createMessageId() {
-        let byteMap = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70]
-        let randBytes = randomBytes(8)
-
-        let result = new Array(16), randByte, randIdx = 0
-
-        for (let idx = 0; randIdx < randBytes.length; randIdx++, idx += 2) {
-            randByte = randBytes[randIdx];
-            result[idx] = byteMap[randByte >> 4]
-            result[idx + 1] = byteMap[15 & randByte]
-        }
-        return "3EB0" + String.fromCharCode.apply(String, result)
+        return this.client.ws.sendNode(node, undefined, binaryOptions(METRIC.PRESENCE))
     }
 
     sendTextMessage(jid: string, message) {
         const msg = new Message()
         const key = new MessageKey()
         const webMsg = new WebMessageInfo()
-        const msgId = this.createMessageId()
+        const msgId = createMessageId()
         key.setId(msgId)
         key.setRemotejid(jid)
         key.setFromme(true)
@@ -121,25 +82,7 @@ class WhatsApp extends EventEmitter {
         const node = this.client.actionNode("relay", [
             ["message", undefined, buf]
         ])
-        L('sendTextMessage', node, buf.length)
-        //return Promise.resolve(true)
         return this.client.ws.sendNode(node, msgId, binaryOptions(METRIC.MESSAGE))
-        /*
-        [
-            "action",
-            {
-                "type": "relay",
-                "epoch": "5"
-            },
-            [
-                [
-                "message",
-                null,
-                ArrayBuffer of Message or WebMessage,
-                ]
-            ]
-            ]
-         */
     }
 
     markRead() {

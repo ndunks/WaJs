@@ -181,9 +181,9 @@ export class WASocket {
     }
 
     send<T = any>(message: Buffer | string, hint?: string, tag?: string, binaryOptions?: Uint8Array) {
-        if (!tag) {
+        if (!tag)
             tag = this.tag()
-        }
+
         return new Promise<T>(
             (resolve, reject) => {
                 let taggedMessage: string | Buffer;
@@ -209,23 +209,19 @@ export class WASocket {
                 }
                 commandTagHandlers.set(tag, { sentMessage: message, callback: resolve, hint })
                 L(Color.y('>> ' + tag), Color.b(options.binary ? 'BIN' : 'STR'), hint, taggedMessage.length)
-                L(taggedMessage.toString('utf8'))
-                L(taggedMessage)
                 this.sock.send(taggedMessage, options, err => err ? reject(err) : null)
             }
         )
     }
 
     sendCmd<T = any>(scope: WhatsAppCmdType, cmd: WhatsAppCmdAction, ...args: Array<string | boolean | any[]>) {
-        return this.send<T>(JSON.stringify(
-            [scope, cmd, ...args]
-        ),
+        return this.send<T>(
+            JSON.stringify([scope, cmd, ...args]),
             `${scope},${cmd}`
         )
     }
     sendBin<T = any>(cmd: string, attr: any, data?: any, hint?: string) {
         const msg = [cmd, attr, data]
-        //console.log('sendBin', msg);
         return this.send<T>(
             Buffer.from(JSON.stringify(msg), 'ascii'),
             hint,
@@ -243,8 +239,6 @@ export class WASocket {
             binaryOptions
         )
     }
-
-
 
     close() {
         if (this.sock && this.sock.readyState == this.sock.OPEN) {

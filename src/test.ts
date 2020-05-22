@@ -11,8 +11,8 @@ global.E = console.error
 //import "./test/readbin-writenode"
 testHelperSequential([
     //require("./test/whatsapp-sendbin").default,
-    //require("./test/whatsapp-presence").default,
-    require("./test/whatsapp-chats").default,
+    require("./test/whatsapp-presence").default,
+    //require("./test/whatsapp-chats").default,
 ]).then(
     (stats) => {
         if (stats.fail) {

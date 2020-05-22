@@ -1,8 +1,50 @@
 import Constant from "./constant";
-import { WidObj } from "./interfaces";
-
+import { WidObj, METRIC, EphemeralFlag } from "./interfaces";
+import { randomBytes } from "crypto";
 const widRegex = /(?:^([^.:@]+))(?:\.([0-9]{1,2}))?(?:\:([0-9]{1,2}))?@(s\.whatsapp\.net|c\.us|g\.us|broadcast|call|b\.whatsapp\.net)$/i;
 const widCanBe = ["name", "short", "notify"];
+
+export function createMessageId() {
+    let byteMap = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70]
+    let randBytes = randomBytes(8)
+
+    let result = new Array(16), randByte, randIdx = 0
+
+    for (let idx = 0; randIdx < randBytes.length; randIdx++, idx += 2) {
+        randByte = randBytes[randIdx];
+        result[idx] = byteMap[randByte >> 4]
+        result[idx + 1] = byteMap[15 & randByte]
+    }
+    return "3EB0" + String.fromCharCode.apply(String, result)
+}
+
+export function binaryOptions(metric: METRIC, flagObj: EphemeralFlag = { ignore: true }) {
+    const bytes = new Uint8Array(2)
+    bytes[0] = metric
+    bytes[1] = 0
+    if (flagObj.ignore) {
+        bytes[1] |= (1 << 7)
+    }
+    if (flagObj.ackRequest) {
+        bytes[1] |= (1 << 6)
+    }
+    if (flagObj.available) {
+        bytes[1] |= (1 << 5)
+    }
+    if (flagObj.notAvailable) {
+        bytes[1] |= (1 << 4)
+    }
+    if (flagObj.expires) {
+        bytes[1] |= (1 << 3)
+    }
+    if (flagObj.skipOffline) {
+        bytes[1] |= (1 << 2)
+    }
+    if (!bytes[0]) {
+        L('Invalid metric', metric, METRIC[metric])
+    }
+    return bytes
+}
 
 export const widHelper = {
     serialize(obj: WidObj) {

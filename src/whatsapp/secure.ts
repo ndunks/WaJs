@@ -31,17 +31,7 @@ export function hmacEncrypt(aesKey: Buffer, macKey: Buffer, data: Buffer) {
     return Buffer.concat([hmac, data])
 }
 
-// function AESPadding(data: Buffer) {
-//     const bs = 32;
-//     //if( data.length % bs == 0) return data
-//     let charPadding = bs - data.length % bs
-//     let padding = Buffer.alloc(charPadding, 0x00)
-//     //L(charPadding, padding)
-//     return Buffer.concat([data, padding])
-//     //return s + (bs - len(s) % bs) * chr(bs - len(s) % bs);
-// }
 export function AESEncrypt(key: Buffer, data: Buffer) {
-    //data = AESPadding(data)
     // Create IV
     const iv = crypto.randomBytes(16);
     const cipher = crypto.createCipheriv('aes-256-cbc', key, iv)//.setAutoPadding(false)

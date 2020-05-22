@@ -134,7 +134,7 @@ export default class Client {
                     // INIT
                     this.ws.sendCmd<CmdInitResponse>('admin', 'init',
                         this.version.split('.').map(v => parseInt(v)),
-                        [/* this.clientName */'Linux', 'Chrome'/* platform() */, 'x86_64'/* arch() */],
+                        [this.clientName, platform(), arch()],
                         this.config.clientId,
                         true
                     ).then(response => {
@@ -193,23 +193,24 @@ export default class Client {
             server: info.serverToken,
             browser: info.browserToken
         }
+
         // Save creds
         configStore(this.authFile, this.config)
         store.storeConn(info)
 
         // call on ready
-        this.onReady(info)
-        // this.sendInitialQueries().then(
-        //     // call on ready
-        //     () => this.onReady(info)
-        // )
+        //this.onReady(info)
+        this.sendInitialQueries().then(
+            // call on ready
+            () => this.onReady(info)
+        )
     }
     async sendInitialQueries() {
         const does = [
             ['queryContacts'],
             ['queryChat'],
-            ['queryStatus'],
-            ['presence', 'available']
+            //['queryStatus'],
+            //['presence', 'available']
         ]
         for (let doo of does) {
             let func = doo.shift()
