@@ -18,12 +18,31 @@ export class StoreChat implements Chat {
     name: string;
     jid: string;
     addMessage(msg: ChatMessage) {
-        if (msg.ack < 2) {
-            L('Unread', this.jid, msg.message.conversation)
-        }
         this.messages.push(msg)
     }
+    addMessages(msgs: ChatMessage[], kind?) {
+        // if (msg.ack < 2) {
+        //     L('Unread', this.jid, msg.message.conversation)
+        // }
+        if (kind == 'last') {
+            this.messages.push(...msgs)
+        } else {
+            this.messages.splice(0, 0, ...msgs)
+        }
+    }
+    getUnreads() {
+        if (this.unread <= 0) return []
+        const inMsgs = this.messages.filter(m => m.direction == 'in')
+        return inMsgs.slice(inMsgs.length - this.unread)
+    }
 
+    getLastInMessage() {
+        for (let i = this.messages.length - 1; i >= 0; i--) {
+            if (this.messages[i].direction == 'in') {
+                return this.messages[i]
+            }
+        }
+    }
 }
 
 class Store {
@@ -56,12 +75,12 @@ class Store {
         const util = require('util')
         fs.writeFileSync(
             `${dir}/store.contacts.js`,
-            `let contacts = ${util.inspect(Object.values(this.mapContacts), { maxArrayLength: null, breakLength: Infinity, showHidden: false, depth: 2, compact: false })}`,
+            `let contacts = ${util.inspect(this.mapContacts, { maxArrayLength: null, breakLength: Infinity, showHidden: false, depth: 2, compact: false })}`,
             'utf8'
         )
         fs.writeFileSync(
             `${dir}/store.chats.js`,
-            `let chats = ${util.inspect(Object.values(this.mapChats), { maxArrayLength: null, breakLength: Infinity, showHidden: false, depth: 5, compact: false })}`,
+            `let chats = ${util.inspect(this.mapChats, { maxArrayLength: null, breakLength: Infinity, showHidden: false, depth: 5, compact: false })}`,
             'utf8'
         )
     }
@@ -97,6 +116,9 @@ class Store {
     }
 
     getChat(jid: string) {
+        if (!jid) {
+            L(Color.r('Get Chat no JID!'), new Error().stack)
+        }
         return this.mapChats[jid] || this.storeChat({ jid })
     }
 

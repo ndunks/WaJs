@@ -9,7 +9,7 @@ import {
 import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
-import store from "../store";
+import store, { StoreChat } from "../store";
 import { Message, MessageKey, WebMessageInfo } from "../whatsapp_pb";
 import { binaryOptions, createMessageId, widHelper } from "./helper";
 
@@ -85,9 +85,23 @@ class WhatsApp extends EventEmitter {
         return this.client.ws.sendNode(node, msgId, binaryOptions(METRIC.MESSAGE))
     }
 
-    markRead() {
-        /*
-        */
+    markRead(jid: string, index: string, count = 1) {
+        const node = this.client.actionNode('set', [['read', {
+            jid,
+            index,
+            count: count.toString(),
+            kind: undefined,
+            owner: 'false',
+            chat: undefined
+        }, undefined]])
+        return this.client.ws.sendNode(node, undefined, binaryOptions(METRIC.READ, {
+            ackRequest: true
+        }))
+    }
+
+    markAllRead(chat:StoreChat) {
+        const m = chat.getLastInMessage()
+        return this.markRead(m.key.remotejid, m.key.id, chat.unread)
     }
     // loadMessage
     /*
@@ -177,18 +191,15 @@ class WhatsApp extends EventEmitter {
                     key: msg.key,
                     direction: msg.key.fromme ? 'out' : 'in',
                     message: msg.message,
-                    ack: 1,
                 })
                 break
             case "last":
-                const d = childs.slice(0, 4).map(c => this.parseWebMessageInfo(c, "last"))
+                const d = childs.map(c => this.parseWebMessageInfo(c, "last"))
                 for (msg of d as WebMessageInfo.AsObject[]) {
                     store.getChat(msg.key.remotejid).addMessage({
                         key: msg.key,
                         direction: msg.key.fromme ? 'out' : 'in',
-                        message: msg.message,
-                        //ack: 3,
-                        recent: true
+                        message: msg.message
                     })
                 }
                 break
@@ -200,14 +211,13 @@ class WhatsApp extends EventEmitter {
                 )
 
                 const chat = store.getChat(h[0].key.remotejid)
-                h.forEach(msg => {
-                    chat.addMessage({
-                        key: msg.key,
-                        direction: msg.key.fromme ? 'out' : 'in',
-                        message: msg.message,
-                        //ack: attr.add == 'unread' ? 1 : 2,
-                    })
-                })
+                chat.addMessages(h.map(msg => ({
+                    key: msg.key,
+                    direction: msg.key.fromme ? 'out' : 'in',
+                    message: msg.message,
+                    //ack: attr.add == 'unread' ? 1 : 2,
+                })), attr.add)
+
                 break
             default:
                 L('Handle action not known:', attr.add)
@@ -222,7 +232,11 @@ class WhatsApp extends EventEmitter {
     parseWebMessageInfo(node: BinNode, kind: string) {
         switch (node[0]) {
             case 'message':
-                return WebMessageInfo.deserializeBinary(Buffer.from(node[2])).toObject()
+                const msg = WebMessageInfo.deserializeBinary(Buffer.from(node[2])).toObject()
+                if (msg && msg.key && msg.key.remotejid.indexOf('s.whatsapp.net')) {
+                    msg.key.remotejid = widHelper.serialize(widHelper.parse(msg.key.remotejid))
+                }
+                return msg
             case "groups_v2":
                 return L(Color.r('Not implemented parseMsgGp2(node)'))
             case "broadcast":

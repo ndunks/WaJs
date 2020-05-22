@@ -166,7 +166,7 @@ export interface BinAttr {
 /** Can be encrypted (bin) or not encrypted */
 export type WANode = [string, (string | BinAttr | any)?, any?]
 
-export type BinNodeTags = 'response' | 'action' | 'user' | 'chat' | 'message' | 'groups_v2' | 'broadcast' | 'notification' | 'call_log' | 'security' | 'query' | 'error' | 'presence'
+export type BinNodeTags = 'read' | 'response' | 'action' | 'user' | 'chat' | 'message' | 'groups_v2' | 'broadcast' | 'notification' | 'call_log' | 'security' | 'query' | 'error' | 'presence'
 
 /** Binary node after decrypted and parsed */
 export interface BinNode extends WANode {

@@ -10,8 +10,8 @@ NodeJS implementation from great research [sigalor/whatsapp-web-reveng](https://
 - [X] Sending presence state
 - [X] Sending Message
 - [X] Listen when got new message
-- [ ] Get All unread message
-- [ ] Mark read
+- [X] Get All unread message
+- [X] Mark read
 - [X] Auto reply
 
 ## Step Explanation
