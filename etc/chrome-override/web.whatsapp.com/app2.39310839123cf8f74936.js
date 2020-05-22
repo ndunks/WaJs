@@ -80748,7 +80748,9 @@
                     i.metric = r.M[i.metricName],
                     i.ackRequest = !1,
                     n.data = a,
-                    n.binaryOpts = i,
+                    n.binaryOpts = i;
+                    console.log('binSend', e, i, n)
+                    console.log(o.default)
                     o.default[e](n)
                 }
                 )).catch(s)

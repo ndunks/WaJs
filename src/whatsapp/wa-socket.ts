@@ -179,25 +179,38 @@ export class WASocket {
     tag() {
         return `${Math.floor(Date.now() / 1000)}.--${this.messageConter++}`
     }
-    send<T = any>(message: Buffer | string, hint?: string, tag?: string) {
+
+    send<T = any>(message: Buffer | string, hint?: string, tag?: string, binaryOptions?: Uint8Array) {
         if (!tag) {
             tag = this.tag()
         }
         return new Promise<T>(
             (resolve, reject) => {
                 let taggedMessage: string | Buffer;
-                const options: { mask?: boolean; binary?: boolean; compress?: boolean; fin?: boolean } = {}
+                const options: { mask?: boolean; binary?: boolean; compress?: boolean; fin?: boolean } = {
+                    compress: false,
+                    mask: true,
+                    fin: true
+                }
                 if (typeof message == 'string') {
                     taggedMessage = `${tag},${message}`
                     options.binary = false
                 } else {
                     // encrypt
                     message = hmacEncrypt(this.config.aesKey, this.config.macKey, message)
-                    taggedMessage = Buffer.concat([Buffer.from(`${tag},`, 'ascii'), message])
+                    const bufs: Uint8Array[] = [Buffer.from(`${tag},`, 'ascii')]
+
+                    if (binaryOptions) {
+                        bufs.push(binaryOptions)
+                    }
+                    bufs.push(message)
+                    taggedMessage = Buffer.concat(bufs)
                     options.binary = true
                 }
                 commandTagHandlers.set(tag, { sentMessage: message, callback: resolve, hint })
                 L(Color.y('>> ' + tag), Color.b(options.binary ? 'BIN' : 'STR'), hint, taggedMessage.length)
+                L(taggedMessage.toString('utf8'))
+                L(taggedMessage)
                 this.sock.send(taggedMessage, options, err => err ? reject(err) : null)
             }
         )
@@ -219,16 +232,19 @@ export class WASocket {
             this.shortTag()
         )
     }
-    sendNode(node: BinNode, tag?: string) {
+    sendNode(node: BinNode, tag?: string, binaryOptions?: Uint8Array) {
         const bos = new BinaryOutputStream()
         writeNode(bos, node)
         const buf = bos.toBuffer()
         return this.send(
             buf,
             'node:' + node[0],
-            tag || this.shortTag()
+            tag || this.shortTag(),
+            binaryOptions
         )
     }
+
+
 
     close() {
         if (this.sock && this.sock.readyState == this.sock.OPEN) {

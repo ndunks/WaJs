@@ -10,12 +10,12 @@ global.E = console.error
 // import "./test/readbin-message"
 //import "./test/readbin-writenode"
 testHelperSequential([
-    require("./test/whatsapp-sendbin").default,
+    //require("./test/whatsapp-sendbin").default,
     //require("./test/whatsapp-presence").default,
-    //require("./test/whatsapp-chats").default,
+    require("./test/whatsapp-chats").default,
 ]).then(
     (stats) => {
-        if(stats.fail ){
+        if (stats.fail) {
             console.log('WhatsApp Test', stats)
         }
         setTimeout(() => testHelperDisconnectWa(), 2000)

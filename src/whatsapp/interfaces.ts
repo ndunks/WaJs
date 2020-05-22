@@ -234,3 +234,55 @@ export interface ChatMessage {
     ack?: number
     message: Message.AsObject
 }
+
+export enum METRIC {
+    DEBUG_LOG = 1,
+    QUERY_RESUME = 2,
+    QUERY_RECEIPT = 3,
+    QUERY_MEDIA = 4,
+    QUERY_CHAT = 5,
+    QUERY_CONTACTS = 6,
+    QUERY_MESSAGES = 7,
+    PRESENCE = 8,
+    PRESENCE_SUBSCRIBE = 9,
+    GROUP = 10,
+    READ = 11,
+    CHAT = 12,
+    RECEIVED = 13,
+    PIC = 14,
+    STATUS = 15,
+    MESSAGE = 16,
+    QUERY_ACTIONS = 17,
+    BLOCK = 18,
+    QUERY_GROUP = 19,
+    QUERY_PREVIEW = 20,
+    QUERY_EMOJI = 21,
+    QUERY_MESSAGE_INFO = 22,
+    SPAM = 23,
+    QUERY_SEARCH = 24,
+    QUERY_IDENTITY = 25,
+    QUERY_URL = 26,
+    PROFILE = 27,
+    CONTACT = 28,
+    QUERY_VCARD = 29,
+    QUERY_STATUS = 30,
+    QUERY_STATUS_UPDATE = 31,
+    PRIVACY_STATUS = 32,
+    QUERY_LIVE_LOCATIONS = 33,
+    LIVE_LOCATION = 3,
+}
+export interface EphemeralFlag {
+    /** 1 << 7, */
+    ignore?: boolean
+    /** 1 << 6, */
+    ackRequest?: boolean
+    /** 1 << 5, */
+    available?: boolean
+    /** 1 << 4, */
+    notAvailable?: boolean
+    /** 1 << 3, */
+    expires?: boolean
+    /** 1 << 2 */
+    skipOffline?: boolean
+    unused?: boolean
+}

@@ -18,13 +18,9 @@ export default function () {
             //     }
             // )
             // send message
-
-            wa.sendTextMessage('6285726501018@s.whatsapp.net', 'Test').then(
+            return wa.sendTextMessage('628997026464@s.whatsapp.net', 'TEST').then(
                 r => console.log('sendTextMessage', r)
             )
-
-
-            //store.dump()
         }
     )
 }

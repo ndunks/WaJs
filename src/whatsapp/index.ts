@@ -3,7 +3,8 @@ import { EventEmitter } from "events";
 import { randomBytes } from "crypto";
 import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
-    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, BinAttr, BinNodeTags, Chat, ChatMessage
+    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, Chat, ChatMessage,
+    METRIC, EphemeralFlag
 } from "./interfaces";
 import { Color } from "../utils";
 import * as fs from "fs";
@@ -11,6 +12,35 @@ import "../whatsapp_pb"
 import { handleActionMsg } from "./parser";
 import store, { StoreChat } from "../store";
 import { Message, MessageKey, WebMessageInfo } from "../whatsapp_pb";
+
+function binaryOptions(metric: METRIC, flagObj: EphemeralFlag = { ignore: true }) {
+    const bytes = new Uint8Array(2)
+    bytes[0] = metric
+    bytes[1] = 0
+    if (flagObj.ignore) {
+        bytes[1] |= (1 << 7)
+    }
+    if (flagObj.ackRequest) {
+        bytes[1] |= (1 << 6)
+    }
+    if (flagObj.available) {
+        bytes[1] |= (1 << 5)
+    }
+    if (flagObj.notAvailable) {
+        bytes[1] |= (1 << 4)
+    }
+    if (flagObj.expires) {
+        bytes[1] |= (1 << 3)
+    }
+    if (flagObj.skipOffline) {
+        bytes[1] |= (1 << 2)
+    }
+    if (!bytes[0]) {
+        L('Invalid metric', metric, METRIC[metric])
+    }
+    L('metricByte', bytes[0], 'flag', bytes[1].toString(2), bytes)
+    return bytes
+}
 
 
 class WhatsApp extends EventEmitter {
@@ -34,21 +64,25 @@ class WhatsApp extends EventEmitter {
         this.client.close()
     }
 
-    queryContacts(){
-        const node = this.client.queryNode({type: 'contacts', kind: undefined})
+    queryContacts() {
+        const node = this.client.queryNode({ type: 'contacts', kind: undefined })
         return this.client.ws.sendNode(node)
     }
 
-    queryChat(){
-        const node = this.client.queryNode({type: 'chat'})
+    queryChat() {
+        const node = this.client.queryNode({ type: 'chat' })
+        return this.client.ws.sendNode(
+            node,
+            undefined,
+            binaryOptions(METRIC.QUERY_CHAT)
+        )
+    }
+
+    queryStatus() {
+        const node = this.client.queryNode({ type: 'status' })
         return this.client.ws.sendNode(node)
     }
 
-    queryStatus(){
-        const node = this.client.queryNode({type: 'status'})
-        return this.client.ws.sendNode(node)
-    }
-    
     presence(type: 'available' | 'unavailable') {
         const node = this.client.actionNode('set', [
             ['presence', { type }, undefined]
@@ -89,7 +123,7 @@ class WhatsApp extends EventEmitter {
         ])
         L('sendTextMessage', node, buf.length)
         //return Promise.resolve(true)
-        return this.client.ws.sendNode(node, msgId)
+        return this.client.ws.sendNode(node, msgId, binaryOptions(METRIC.MESSAGE))
         /*
         [
             "action",
