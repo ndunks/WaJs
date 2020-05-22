@@ -9,7 +9,6 @@ import {
 import { Color } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
-import { handleActionMsg } from "./parser";
 import store from "../store";
 import { Message, MessageKey, WebMessageInfo } from "../whatsapp_pb";
 import { binaryOptions, createMessageId } from "./helper";
@@ -18,6 +17,7 @@ import { binaryOptions, createMessageId } from "./helper";
 class WhatsApp extends EventEmitter {
     client: Client
     private isInitialized = false
+    unreadInboxMessage: WebMessageInfo.AsObject[] = []
 
     constructor(authFile = '.auth') {
         super()
@@ -138,20 +138,87 @@ class WhatsApp extends EventEmitter {
         store.storeChat(chat)
     }
 
-    binaryHandle_action(attr: BinAttrChat, childs) {
-        handleActionMsg.call(this, attr, childs)
+    binaryHandle_action(attr: BinAttrChat, childs: BinNode[]) {
+        let msg: WebMessageInfo.AsObject
+        L(Color.b("<< Action"), attr)
+
+        switch (attr.add) {
+            // Realtime new message?
+            case "relay":
+            case "update":
+                msg = this.parseWebMessageInfo(childs[0], "relay") as WebMessageInfo.AsObject
+                if (!msg) {
+                    L(Color.r("<< Action IGNORED"), attr.add, attr, childs)
+                    return
+                }
+                if (!msg.key.fromme) {
+                    this.emit('new-message', msg)
+                }
+                L(attr.add, msg.key.id, msg.key.participant || msg.key.remotejid)
+                store.getChat(msg.key.remotejid).addMessage({
+                    key: msg.key,
+                    direction: msg.key.fromme ? 'out' : 'in',
+                    message: msg.message,
+                    ack: 1,
+                })
+                break
+            case "last":
+                const d = childs.slice(0, 4).map(c => this.parseWebMessageInfo(c, "last"))
+                for (msg of d as WebMessageInfo.AsObject[]) {
+                    store.getChat(msg.key.remotejid).addMessage({
+                        key: msg.key,
+                        direction: msg.key.fromme ? 'out' : 'in',
+                        message: msg.message,
+                        //ack: 3,
+                        recent: true
+                    })
+                }
+                break
+            case "before":
+            case "after":
+            case "unread":
+                const h = childs.map(
+                    c => this.parseWebMessageInfo(c, attr.add) as WebMessageInfo.AsObject
+                )
+
+                const chat = store.getChat(h[0].key.remotejid)
+                h.forEach(msg => {
+                    chat.addMessage({
+                        key: msg.key,
+                        direction: msg.key.fromme ? 'out' : 'in',
+                        message: msg.message,
+                        //ack: attr.add == 'unread' ? 1 : 2,
+                    })
+                })
+                break
+            default:
+                L('Handle action not known:', attr.add)
+                break
+        }
         if (!this.isInitialized && attr.last == 'true') {
             this.isInitialized = true
             this.emit('initialized')
         }
     }
 
-    // binaryHandle_message(attr: BinAttrChat, data) {
-    //     //const obj: any = proto.proto.Message.deserializeBinary(data).toObject()
-
-    //     //L('message', attr, data)
-    // }
-
+    parseWebMessageInfo(node: BinNode, kind: string) {
+        switch (node[0]) {
+            case 'message':
+                return WebMessageInfo.deserializeBinary(Buffer.from(node[2])).toObject()
+            case "groups_v2":
+                return L(Color.r('Not implemented parseMsgGp2(node)'))
+            case "broadcast":
+                return L(Color.r('Not implemented parseMsgBroadcast(node'))
+            case "notification":
+                return L(Color.r('Not implemented parseMsgNotification(node)'))
+            case "call_log":
+                return L(Color.r('Not implemented parseMsgCallLog(node)'))
+            case "security":
+                return L(Color.r('Not implemented parseMsgSecurity(node)'))
+            default:
+                return L(Color.r("parseMsg: unhandled"), node)
+        }
+    }
 }
 
 declare interface WhatsApp extends NodeJS.EventEmitter {
@@ -164,7 +231,7 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     /** After login and received some initial data from server */
     on(event: 'initialized', listener: () => void): this;
     /** No new Message arrived */
-    on(event: 'new-message', listener: (msg: ChatMessage) => void): this;
+    on(event: 'new-message', listener: (msg: WebMessageInfo.AsObject) => void): this;
     on(event: 'disconnect', listener: (kind: 'replaced') => void): this;
     /** Login in another web.whatsapp */
     on(event: 'replaced', listener: () => void): this;

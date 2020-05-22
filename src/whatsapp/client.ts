@@ -199,18 +199,16 @@ export default class Client {
         store.storeConn(info)
 
         // call on ready
-        //this.onReady(info)
-        this.sendInitialQueries().then(
-            // call on ready
-            () => this.onReady(info)
-        )
+        this.onReady(info)
     }
+
+    /** Just call it to make looks like normal web whatsapp behaviour */
     async sendInitialQueries() {
         const does = [
             ['queryContacts'],
             ['queryChat'],
-            //['queryStatus'],
-            //['presence', 'available']
+            ['queryStatus'],
+            ['presence', 'available']
         ]
         for (let doo of does) {
             let func = doo.shift()

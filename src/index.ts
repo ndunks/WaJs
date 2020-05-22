@@ -19,7 +19,7 @@ wa.on('initialized', () => {
 })
 
 wa.on('new-message', (msg) => {
-    L(Color.m('::'), 'new-message', msg.key.remotejid, msg.message.conversation)
+    L(Color.y('::new-message'), msg.key.remotejid, msg.message.conversation)
 })
 
 wa.on('Msg', (data) => {

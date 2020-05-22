@@ -235,6 +235,18 @@ export interface ChatMessage {
     message: Message.AsObject
 }
 
+export interface Contact {
+    notify: string
+    jid: string
+    /** number */
+    verify?: number
+    short?: string
+    vname?: string
+    name?: string
+    /** first letter */
+    index?: string
+}
+
 export enum METRIC {
     DEBUG_LOG = 1,
     QUERY_RESUME = 2,

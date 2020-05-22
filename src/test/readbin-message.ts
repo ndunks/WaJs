@@ -3,12 +3,12 @@ import { readNode } from "../whatsapp/binary/reader";
 import assert from "assert";
 import "../whatsapp_pb"
 import { WANode } from "../whatsapp/interfaces";
-
-import { handleActionMsg } from "../whatsapp/parser";
 import BinaryInputStream from "../whatsapp/binary/input-stream";
+import WhatsApp from "../whatsapp";
+import store from "../store";
 
 
-
+const wa = new WhatsApp()
 const dir = `etc/binary-sample`
 /** Message sent after preempt is contain chats */
 let addlastLength = 0;
@@ -27,18 +27,13 @@ for (const file of files) {
     assert.strictEqual(Array.isArray(result[2]), true)
     let res;
     assert.doesNotThrow(() => {
-        res = handleActionMsg.call( undefined , result[1], result[2])
+        res = wa.binaryHandle_action(result[1], result[2])
     })
     L('add', result[1].add, res)
     if (result[1].add == 'last') {
-        addlastLength += result[2].length
+        addlastLength = result[2].length
+        L('last len', result[2].length)
     }
     //break;
 }
-//dumpChats()
-//const recents = getRecentChats()
-//assert.equal(addlastLength, recents.length)
-// recents.slice(0, 10).forEach(
-//     m => console.log(m.msg.key, m.msg.message)
-// )
-//fs.writeFileSync('tmp/chats.json', JSON.stringify(chats, null, 2))
+L('unread', store.getUnreadChats().length)
