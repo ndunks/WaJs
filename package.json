@@ -6,8 +6,8 @@
   "author": "Mochamad Arifin",
   "license": "MIT",
   "scripts": {
-    "dev": "tsc-watch --onFirstSuccess 'nodemon --delay 0.5 -w dist -e js -x node dist/index.js'",
-    "test-watch": "tsc-watch --onFirstSuccess 'nodemon --delay 0.5 -w dist -e js -x node dist/test.js'",
+    "dev": "tsc-watch --onFirstSuccess \"nodemon --delay 0.5 -w dist -e js -x node dist/index.js\"",
+    "test-watch": "tsc-watch --onFirstSuccess \"nodemon --delay 0.5 -w dist -e js -x node dist/test.js\"",
     "clean": "rm -rf dist"
   },
   "dependencies": {
