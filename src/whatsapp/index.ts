@@ -16,7 +16,7 @@ import { binaryOptions, createMessageId, widHelper } from "./helper";
 
 class WhatsApp extends EventEmitter {
     client: Client
-    private isInitialized = false
+    private chatsLoaded = false
     unreadInboxMessage: WebMessageInfo.AsObject[] = []
 
     constructor(authFile = '.auth') {
@@ -24,7 +24,7 @@ class WhatsApp extends EventEmitter {
         this.client = new Client(authFile, this)
         const preemptHandle = parsed => this.binaryHandle(parsed)
         this.on('preempt', preemptHandle)
-        this.on('initialized', () => this.off('preempt', preemptHandle))
+        this.on('chats-loaded', () => this.off('preempt', preemptHandle))
     }
 
     connect() {
@@ -103,22 +103,6 @@ class WhatsApp extends EventEmitter {
         const m = chat.getLastInMessage()
         return this.markRead(m.key.remotejid, m.key.id, chat.unread)
     }
-    // loadMessage
-    /*
-    [
-  "query",
-  {
-    "type": "message",
-    "kind": "before",
-    "jid": "628997026464@c.us",
-    "count": "50",
-    "index": "3EB01C2454884CAA32CC",
-    "owner": "false",
-    "epoch": "2"
-  },
-  null
-]
-    */
 
     binaryHandle(parsed: BinNode) {
         if ('undefined' == typeof this[`binaryHandle_${parsed[0]}`]) {
@@ -223,9 +207,9 @@ class WhatsApp extends EventEmitter {
                 L('Handle action not known:', attr.add)
                 break
         }
-        if (!this.isInitialized && attr.last == 'true') {
-            this.isInitialized = true
-            this.emit('initialized')
+        if (!this.chatsLoaded && attr.last == 'true') {
+            this.chatsLoaded = true
+            this.emit('chats-loaded')
         }
     }
 
@@ -260,8 +244,6 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
      */
     on(event: string, listener: (...args: any[]) => void): this;
     on(event: 'open', listener: () => void): this;
-    /** After login and received some initial data from server */
-    on(event: 'initialized', listener: () => void): this;
     /** No new Message arrived */
     on(event: 'new-user-message', listener: (msg: WebMessageInfo.AsObject) => void): this;
     on(event: 'new-group-message', listener: (msg: WebMessageInfo.AsObject) => void): this;
@@ -277,8 +259,8 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     //on(event: 'message', listener: (tag: string, data: Buffer | string) => void): this;
     /** Got server message, 's' prefixed eg s1, s2, s3 */
     on(event: 'server-message', listener: (cmd: WhatsAppServerMsg, data: Array<any> | Object) => void): this;
-    /** On preempt chats received */
-    on(event: 'chats-loaded', listener: (chats: BinAttrChat[]) => void): this;
+    /** After login and received initial chats data from server */
+    on(event: 'chats-loaded', listener: () => void): this;
     /** '!' prefixed */
     on(event: 'timeskew', listener: (ts: number, message: null | string | Buffer) => void): this;
     on(event: 'preempt', listener: (data: PreemptMessage) => void): this;

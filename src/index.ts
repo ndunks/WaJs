@@ -14,8 +14,8 @@ wa.connect().then(
     }
 ).catch(err => console.error(err))
 
-wa.on('initialized', () => {
-    L('::initialized Unread:', store.getUnreadChats().length)
+wa.on('chats-loaded', () => {
+    L('::chats-loaded:', store.getUnreadChats().length)
 })
 
 wa.on('new-user-message', (msg) => {
@@ -26,6 +26,10 @@ wa.on('status-broadcast', (msg) => {
 })
 wa.on('new-group-message', (msg) => {
     L(Color.y('::new-group-message'), msg.key.remotejid, msg.message.conversation)
+})
+
+wa.on('server-message', (data) => {
+    L(Color.m('::'), 'server-message', data)
 })
 
 wa.on('Msg', (data) => {
@@ -51,10 +55,7 @@ wa.on('timeskew', (ts) => {
 wa.on('close', (code, reason) => {
     L(Color.m('::'), 'close', code, reason)
 })
-wa.on('chats-loaded', chats => {
-    console.log('::chats-loaded', chats[0], chats[chats.length - 1]);
 
-})
 wa.on('action', (attr, childs) => {
     console.log('::action', childs[0]);
 })

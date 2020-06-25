@@ -24,7 +24,7 @@ export class WASocket {
 
     constructor(private wa: WhatsApp, private config: WhatsAppClientConfig
     ) {
-        wa.on('initialized', () => this.watchdogTimer = setInterval(this.watchdog, 5000))
+        wa.on('chats-loaded', () => this.watchdogTimer = setInterval(this.watchdog, 5000))
         this.sock = new WebSocket("wss://web.whatsapp.com/ws", {
             origin: "https://web.whatsapp.com",
         })
