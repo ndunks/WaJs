@@ -5446,6 +5446,7 @@
             },
             msgCreateRecord: function(e, t) {
                 var a = this;
+                console.log('msgCreateRecord',e,t);
                 return new Promise((function(n, i) {
                     var r, o, d = e.id.id;
                     if ("chat" === e.type) {
@@ -85351,8 +85352,10 @@
             this.write = function(e) {
                 return Promise.callSynchronously((function() {
                     var t = new r;
-                    return d.writeNode(t, e),
-                    u.encrypt(t.toBuffer())
+                    d.writeNode(t, e);
+                    let buf = t.toBuffer();
+                    console.log('write', e, buf, new Error().stack);
+                    return u.encrypt(buf);
                 }
                 ))
             }
@@ -88284,7 +88287,7 @@
         }
           , m = (0,
         o.default)(g, d.default);
-        t.default = m
+        t.default = m;
     },
     ecigjabbeb: function(e, t, a) {
         "use strict";
@@ -103144,7 +103147,7 @@
             supportsFeatureFlags: !0,
             implementedFeatures: {}
         }, r.default);
-        t.default = o
+        window.app2_ex = t.default = o
     },
     jhcjhcfde: function(e, t, a) {
         "use strict";

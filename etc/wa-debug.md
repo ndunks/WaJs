@@ -11,7 +11,9 @@ Binary protocol handler and WS response handler is on `app2.{hash}.js`
 
 - search `BinaryProtocol.read` or `invalid node.`
 
+## Sending Message
 
+Send message handled in app2.js, search for: `msgCreateRecord:`, place some export to make it visible from console.
 
 ## Some Debuging info
 String data with ! as begining is special meaning
