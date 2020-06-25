@@ -4,7 +4,6 @@ import Dictionary from "../dictionary";
 import { Color, E } from "../../utils";
 import { WANode } from "../interfaces";
 import BinaryInputStream from "./input-stream";
-import { widHelper } from "../helper";
 
 export function readString(buf: BinaryInputStream, tag: BinaryTag): string {
     if (tag < 0)
@@ -130,7 +129,6 @@ export function readListSize(buf: BinaryInputStream, tag: BinaryTag): number {
 
 export function getToken(no: number) {
     if (no < 3 || no >= Dictionary.singleByte.length) {
-        E(Color.r("Miss sungle byte token"), no);
         return `sunglebyte_${no}`
     }
     return Dictionary.singleByte[no]
@@ -140,7 +138,6 @@ export function getTokenDouble(no: number, len: number) {
     var a, n = 256 * len + no;
     if (n >= 0 && n < Dictionary.doubleByte.length && (a = Dictionary.doubleByte[n]),
         void 0 === a) {
-        E(Color.r("Miss double byte token"), len, no);
         return `doublebyte_${no}_${len}`
     }
     return a
