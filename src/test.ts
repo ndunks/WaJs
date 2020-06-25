@@ -1,10 +1,5 @@
 import { testHelperSequential, testHelperDisconnectWa } from "./test/helper"
 
-///@ts-ignore
-global.L = console.log
-///@ts-ignore
-global.E = console.error
-
 //import "./test/protobuf"
 //import "./test/readbin-preempt"
 //import "./test/readbin-message"
@@ -12,7 +7,8 @@ global.E = console.error
 testHelperSequential([
     //require("./test/whatsapp-sendbin").default,
     //require("./test/whatsapp-presence").default,
-    require("./test/whatsapp-chats").default,
+    //require("./test/whatsapp-chats").default,
+    require("./test/whatsapp-sendmessage").default,
 ]).then(
     (stats) => {
         if (stats.fail) {

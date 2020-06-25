@@ -3,7 +3,7 @@ import { Color } from "../utils";
 
 let wa_instance: WhatsApp
 
-/** Get WA after initialized */
+/** Get WA after chats-loaded */
 export function testHelperLoadWa(): Promise<WhatsApp> {
     if (wa_instance) return Promise.resolve(wa_instance)
     const wa = new WhatsApp();
@@ -17,7 +17,7 @@ export function testHelperLoadWa(): Promise<WhatsApp> {
                 );
             }
         ).catch(rej)
-        wa.on('initialized', () => res(wa_instance = wa))
+        wa.on('chats-loaded', () => res(wa_instance = wa))
     })
 }
 
