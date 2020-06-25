@@ -127,7 +127,7 @@ export class WASocket {
                 // Just emit the event
                 return
             }
-            if (id.match(/^\d+-\d+$/)) {
+            if (id.match(/^[0-9a-f]+\.--[0-9a-f]+$/)) {
                 if (Array.isArray(parsed)) {
                     if (!parsed[0]) {
                         logs.push(Color.r('node with empty cmd!'), parsed)
