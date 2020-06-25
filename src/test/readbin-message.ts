@@ -6,6 +6,7 @@ import { WANode } from "../whatsapp/interfaces";
 import BinaryInputStream from "../whatsapp/binary/input-stream";
 import WhatsApp from "../whatsapp";
 import store from "../store";
+import { L } from "../utils";
 
 
 const wa = new WhatsApp()

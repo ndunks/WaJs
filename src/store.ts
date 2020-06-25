@@ -1,5 +1,5 @@
 import { BinAttr, BinAttrUser, BinAttrChat, Chat, WhatsAppServerMsgConn, ChatMessage, Contact } from "./whatsapp/interfaces";
-import { Color } from "./utils";
+import { Color, L } from "./utils";
 import { widHelper } from "./whatsapp/helper";
 import { WebMessageInfo } from "./whatsapp_pb";
 //const chats = new Map<Wid,WaChat>()

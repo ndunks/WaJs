@@ -1,11 +1,8 @@
 import { readFileSync, writeFileSync } from "fs";
 import { WhatsAppClientConfig } from "./whatsapp/interfaces"
 
-///@ts-ignore
-global.L = console.log
-///@ts-ignore
-global.E = console.error
-
+const L = console.log
+const E = console.error
 
 function configLoad(file: string) {
     const obj = JSON.parse(readFileSync(file, 'utf8'))
@@ -39,4 +36,4 @@ const Color = {
     b(s: string) { return `\x1b[34m${s}\x1b[0m` },
     w(s: string) { return `\x1b[37m${s}\x1b[0m` },
 }
-export { configStore, configLoad, Color }
+export { configStore, configLoad, Color, L, E }

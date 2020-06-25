@@ -5,7 +5,7 @@ import {
     WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig, BinNode, BinNodeTags, BinAttr
 } from "./interfaces";
 import * as fs from 'fs'
-import { configLoad, configStore, Color } from "../utils";
+import { configLoad, configStore, Color, L, E } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys } from "./secure";
 import authRestoreTakeOver from "./auth/restore-takeover";
 import WASocket from "./wa-socket";

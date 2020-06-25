@@ -3,7 +3,7 @@ import {
     WhatsAppCmdType, WhatsAppCmdAction, WhatsAppClientConfig,
     WANode, BinNode, AsyncTagHandler
 } from "./interfaces";
-import { Color } from "../utils";
+import { Color, L, E } from "../utils";
 import { hmacDecrypt, hmacEncrypt } from "./secure";
 import { readNode } from "./binary/reader";
 import WhatsApp from ".";

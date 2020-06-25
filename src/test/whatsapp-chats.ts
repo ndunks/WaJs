@@ -1,6 +1,6 @@
 import { testHelperLoadWa } from "./helper";
 import store from "../store";
-import { Color } from "../utils";
+import { Color, L } from "../utils";
 import { widHelper } from "../whatsapp/helper";
 
 export default function () {

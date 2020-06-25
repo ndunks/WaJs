@@ -1,7 +1,7 @@
 // app2.b77125350eb0570a9fcd.js#cdjdachjig
 import BinaryTag from "./tags";
 import Dictionary from "../dictionary";
-import { Color } from "../../utils";
+import { Color, E } from "../../utils";
 import { WANode } from "../interfaces";
 import BinaryInputStream from "./input-stream";
 import { widHelper } from "../helper";

@@ -1,5 +1,5 @@
 import WhatsApp from "./whatsapp";
-import { Color } from "./utils";
+import { Color, L } from "./utils";
 import store from "./store";
 
 ///@ts-ignore

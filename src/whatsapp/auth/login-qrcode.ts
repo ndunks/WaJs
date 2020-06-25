@@ -1,6 +1,7 @@
 import * as qrcode from 'qrcode-terminal'
 import Client from '../client';
 import { WhatsAppServerMsgConn, CmdInitResponse } from '../interfaces';
+import { L } from '../../utils';
 
 function generateQRCode(serverId: string, publicKey: Buffer, clientId: string) {
     const qrContent = [

@@ -1,6 +1,7 @@
 import Constant from "./constant";
 import { WidObj, METRIC, EphemeralFlag } from "./interfaces";
 import { randomBytes } from "crypto";
+import { L } from "../utils";
 const widRegex = /(?:^([^.:@]+))(?:\.([0-9]{1,2}))?(?:\:([0-9]{1,2}))?@(s\.whatsapp\.net|c\.us|g\.us|broadcast|call|b\.whatsapp\.net)$/i;
 const widCanBe = ["name", "short", "notify"];
 

@@ -6,7 +6,7 @@ import {
     METRIC,
     BinAttr
 } from "./interfaces";
-import { Color } from "../utils";
+import { Color, L } from "../utils";
 import * as fs from "fs";
 import "../whatsapp_pb"
 import store, { StoreChat } from "../store";

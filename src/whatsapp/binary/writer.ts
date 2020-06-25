@@ -3,7 +3,7 @@ import BinaryTag from "./tags";
 import { BinNode, BinAttr } from "../interfaces";
 import BinaryOutputStream from "./output-stream";
 import { widHelper } from "../helper";
-import { Color } from "../../utils";
+import { L } from "../../utils";
 
 /** Reversed single bytes */
 let singleByteMaps = {};

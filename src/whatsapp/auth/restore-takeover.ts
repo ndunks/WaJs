@@ -1,5 +1,6 @@
 import Client from "../client"
 import { WhatsAppServerMsgConn } from "../interfaces"
+import { L } from "../../utils"
 
 export default function authRestoreTakeOver(this: Client, ref: string, ttl: number) {
     return new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
