@@ -2,12 +2,11 @@ import Client from "./client";
 import { EventEmitter } from "events";
 import {
     WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
-    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, Chat, ChatMessage,
+    BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, Chat,
     METRIC,
     BinAttr
 } from "./interfaces";
 import { Color, L } from "../utils";
-import * as fs from "fs";
 import "../whatsapp_pb"
 import store, { StoreChat } from "../store";
 import { Message, MessageKey, WebMessageInfo } from "../whatsapp_pb";
@@ -24,7 +23,10 @@ class WhatsApp extends EventEmitter {
         this.client = new Client(authFile, this)
         const preemptHandle = parsed => this.binaryHandle(parsed)
         this.on('preempt', preemptHandle)
-        this.on('chats-loaded', () => this.off('preempt', preemptHandle))
+        this.on('chats-loaded', () => {
+            this.off('preempt', preemptHandle)
+            this.presence('available')
+        })
     }
 
     connect() {
@@ -99,7 +101,7 @@ class WhatsApp extends EventEmitter {
         }))
     }
 
-    markAllRead(chat:StoreChat) {
+    markAllRead(chat: StoreChat) {
         const m = chat.getLastInMessage()
         return this.markRead(m.key.remotejid, m.key.id, chat.unread)
     }
