@@ -29,6 +29,7 @@ export function testHelperDisconnectWa(afterSecond: number = null) {
     if (afterSecond === null) {
         // just disable watchdog
         wa_instance.client.ws.stopWatchdog()
+        return;
     }
 
     return new Promise((res, rej) => {
