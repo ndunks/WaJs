@@ -2,6 +2,12 @@
 
 NodeJS implementation from great research [sigalor/whatsapp-web-reveng](https://github.com/sigalor/whatsapp-web-reveng).
 
+This project is **not for normal-user**. at least you must know JavaScript/TypeScript dialect :-).
+
+## How to Dev
+
+first, you need to install depency with `yarn` or `npm`. then `yarn dev` or `npm run dev`.
+
 ## TODOs
 
 - [X] Authentication QR Code
