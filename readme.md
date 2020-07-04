@@ -4,9 +4,21 @@ NodeJS implementation from great research [sigalor/whatsapp-web-reveng](https://
 
 This project is **not for normal-user**. at least you must know JavaScript/TypeScript dialect :-).
 
+## Want a Quick Proff ?
+
+- Install depency `yarn` / `npm`
+- `npm run test-watch`
+- scan displayed QR Code on terminal with your WhatsApp app
+- With other WhatsApp number, try sending message to your WhatsApp number
+- The message should be autoreplied
+
+    **NOTE:** All unread message on your inbox will be auto replied too :-)
+
 ## How to Dev
 
 first, you need to install depency with `yarn` or `npm`. then `yarn dev` or `npm run dev`.
+
+    For you that have a time, I hope you send me PR to make it better.
 
 ## TODOs
 
@@ -19,6 +31,11 @@ first, you need to install depency with `yarn` or `npm`. then `yarn dev` or `npm
 - [X] Get All unread message
 - [X] Mark read
 - [X] Auto reply
+- [ ] Handle account take over on the fly. Re-take over or exit.
+- [ ] Send media (image/video)
+- [ ] Run specific test by specifying on argument
+- [ ] If test require a WA Number, make it dynamic on argument or ( unindexed ) file.
+- [ ] Make it like a library, easy to use with just installing as NPM Package (Thats mean we need a bundling system)
 
 ## Step Explanation
 - First send init command
