@@ -15,29 +15,11 @@ wa.connect().then(
 ).catch(err => console.error(err))
 
 wa.on('chats-loaded', () => {
-    L('::chats-loaded:', store.getUnreadChats().length)
-    store.getUnreadChats().forEach(
-        v => {
-            const lastMessage = v.getLastInMessage().message.conversation
-            L(v.jid, lastMessage);
-            // wa.markAllRead(v).then(
-            //     () => {
-            //         // Auto reply
-            //         wa.sendTextMessage(v.jid, `Thanks for sending me *${lastMessage}*`)
-            //     }
-            // )
-        }
-    )
+    L('::chats-loaded: unread: ', store.getUnreadChats().length)
 })
 
 wa.on('new-user-message', (msg) => {
     L(Color.y('::new-user-message'), msg.key.remotejid, msg.message.conversation)
-    // wa.markRead(msg.key.remotejid, msg.key.id, 1).then(
-    //     () => {
-    //         // Auto reply
-    //         wa.sendTextMessage(msg.key.remotejid, `Thanks for sending me *${msg.message && msg.message.conversation}*`)
-    //     }
-    // )
 })
 wa.on('status-broadcast', (msg) => {
     L(Color.y('::status-broadcast'), msg.key.remotejid, msg.message.conversation)

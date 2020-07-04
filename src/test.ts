@@ -8,7 +8,8 @@ testHelperSequential([
     //require("./test/whatsapp-sendbin").default,
     //require("./test/whatsapp-presence").default,
     //require("./test/whatsapp-chats").default,
-    require("./test/whatsapp-sendmessage").default,
+    //require("./test/whatsapp-sendmessage").default,
+    require("./test/whatsapp-autoreply").default,
 ]).then(
     (stats) => {
         if (stats.fail) {
