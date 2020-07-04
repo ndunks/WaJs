@@ -72,8 +72,9 @@ class WhatsApp extends EventEmitter {
         const key = new MessageKey()
         const webMsg = new WebMessageInfo()
         const msgId = createMessageId()
+
         key.setId(msgId)
-        key.setRemotejid(jid)
+        key.setRemotejid(widHelper.sanitizer(jid))
         key.setFromme(true)
         msg.setConversation(message)
         webMsg.setKey(key)

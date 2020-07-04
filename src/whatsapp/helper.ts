@@ -48,6 +48,13 @@ export function binaryOptions(metric: METRIC, flagObj: EphemeralFlag = { ignore:
 }
 
 export const widHelper = {
+    sanitizer(str: string) {
+        let obj = widHelper.parse(str);
+        if (obj.server == 'c.us') {
+            obj.server = 's.whatsapp.net'
+        }
+        return widHelper.serialize(obj);
+    },
     serialize(obj: WidObj) {
         let vals = []
         vals.push(obj.user)
