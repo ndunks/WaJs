@@ -3,6 +3,7 @@
         "**/node_modules": true
     },
     "files.watcherExclude": {
-        "**/tmp": true
+        "**/tmp": true,
+        "**/dist": true
     }
 }
