@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "./src",
+    "esModuleInterop": true,
+    "outDir": "build-dev"
+  },
+  "files": [
+    "src/index.ts"
+  ]
+}

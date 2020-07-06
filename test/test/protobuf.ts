@@ -1,8 +1,8 @@
 import * as assert from "assert";
 import * as fs from "fs";
-import { Chat, Message, WebMessageInfo, MessageKey } from "../whatsapp_pb";
-import { writeNode } from "../whatsapp/binary/writer";
-import BinaryOutputStream from "../whatsapp/binary/output-stream";
+import { Chat, Message, WebMessageInfo, MessageKey } from "whatsapp_pb";
+import { writeNode } from "@/whatsapp/binary/writer";
+import BinaryOutputStream from "@/whatsapp/binary/output-stream";
 
 const plainObj = {
     id: 'AEDF49F7E5FD1F',

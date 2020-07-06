@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "outDir": "dist/"
+  },
+  "files": [
+    "src/index.ts"
+  ]
+}

@@ -1,17 +1,20 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "es5",
-    "module": "commonjs",
-    "allowJs": true,
-    "checkJs": false,
-    "outDir": "dist/",
-    "strict": false,
-    "noImplicitThis": true,
     "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "src/*"
+      ],
+      "whatsapp_pb": [
+        "src/whatsapp_pb"
+      ]
+    },
+    "outDir": "build-test"
   },
   "include": [
     "src/**/*.ts",
-    "src/whatsapp_pb.js"
+    "test/**/*.ts"
   ]
 }

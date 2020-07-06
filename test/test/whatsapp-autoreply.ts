@@ -1,5 +1,5 @@
 import { testHelperLoadWa, testHelperSequential } from "./helper";
-import store from "../store";
+import store from "@/store";
 
 
 export default function () {

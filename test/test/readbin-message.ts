@@ -1,12 +1,12 @@
 import * as fs from "fs"
-import { readNode } from "../whatsapp/binary/reader";
+import { readNode } from "@/whatsapp/binary/reader";
 import assert from "assert";
-import "../whatsapp_pb"
-import { WANode } from "../whatsapp/interfaces";
-import BinaryInputStream from "../whatsapp/binary/input-stream";
-import WhatsApp from "../whatsapp";
-import store from "../store";
-import { L } from "../utils";
+import "whatsapp_pb"
+import { WANode } from "@/whatsapp/interfaces";
+import BinaryInputStream from "@/whatsapp/binary/input-stream";
+import WhatsApp from "@/whatsapp";
+import store from "@/store";
+import { L } from "@/utils";
 
 
 const wa = new WhatsApp()

@@ -3,3 +3,4 @@
 /tmp
 /.auth*
 /log
+/build-*

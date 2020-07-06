@@ -1,8 +1,8 @@
 import * as fs from "fs"
-import { readNode } from "../whatsapp/binary/reader";
+import { readNode } from "@/whatsapp/binary/reader";
 import assert from "assert";
-import { WANode } from "../whatsapp/interfaces";
-import BinaryInputStream from "../whatsapp/binary/input-stream";
+import { WANode } from "@/whatsapp/interfaces";
+import BinaryInputStream from "@/whatsapp/binary/input-stream";
 
 
 const dir = `etc/binary-sample`

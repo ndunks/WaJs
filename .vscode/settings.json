@@ -4,6 +4,7 @@
     },
     "files.watcherExclude": {
         "**/tmp": true,
-        "**/dist": true
+        "**/dist": true,
+        "**/build-*": true
     }
 }

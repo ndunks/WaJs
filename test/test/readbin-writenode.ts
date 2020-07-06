@@ -1,12 +1,12 @@
 import assert from "assert";
 import crypto from "crypto";
-import { BinNode } from "../whatsapp/interfaces";
-import { writeNode } from "../whatsapp/binary/writer";
-import BinaryOutputStream from "../whatsapp/binary/output-stream";
-import { readNode } from "../whatsapp/binary/reader";
-import BinaryInputStream from "../whatsapp/binary/input-stream";
-import { configLoad } from "../utils";
-import { AESEncrypt, AESDecrypt, hmacDecrypt } from "../whatsapp/secure";
+import { BinNode } from "@/whatsapp/interfaces";
+import { writeNode } from "@/whatsapp/binary/writer";
+import BinaryOutputStream from "@/whatsapp/binary/output-stream";
+import { readNode } from "@/whatsapp/binary/reader";
+import BinaryInputStream from "@/whatsapp/binary/input-stream";
+import { configLoad } from "@/utils";
+import { AESEncrypt, AESDecrypt, hmacDecrypt } from "@/whatsapp/secure";
 
 let node1: BinNode = [
     'user',

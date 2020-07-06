@@ -172,7 +172,7 @@ class WhatsApp extends EventEmitter {
                             break;
                     }
                 } else {
-                    L(attr.add, msg.key, msg.message.conversation)
+                    L(attr.add, msg.key, msg.message)
                 }
                 store.getChat(msg.key.remotejid).addMessage({
                     key: msg.key,
