@@ -18,10 +18,10 @@ export function testHelperLoadWa(): Promise<WhatsApp> {
                     info.phone.device_manufacturer,
                     info.phone.device_model
                 );
-                res(wa_instance = wa);
+                //res(wa_instance = wa);
             }
         ).catch(rej)
-        //wa.on('chats-loaded', () => res(wa_instance = wa))
+        wa.on('chats-loaded', () => res(wa_instance = wa))
     })
 }
 
