@@ -272,6 +272,8 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     on(event: 'Blocklist', listener: (data: any) => void): this;
     on(event: 'Presence', listener: (data: DataPresence) => void): this;
     on(event: 'Msg', listener: (data: DataMsgTypes) => void): this;
+	on(event: 'qrcode', listener: (data: string) => void): this;
+
 }
 
 export default WhatsApp

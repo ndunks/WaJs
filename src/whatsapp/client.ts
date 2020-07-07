@@ -7,7 +7,6 @@ import {
 import * as fs from 'fs'
 import { configLoad, configStore, Color, L, E } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys } from "./secure";
-import authRestoreTakeOver from "./auth/restore-takeover";
 import WASocket from "./wa-socket";
 import WhatsApp from ".";
 import store from "../store";
@@ -38,8 +37,9 @@ export default class Client {
     timeSkew: number
     epochCount = 0
     epoch = 0
+	timer = null
 
-    protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void
+    
     /** Internal command handler */
     private serverCmdHandlers = {
         disconnect: (args) => {
@@ -123,54 +123,118 @@ export default class Client {
             epoch: this.epochSend()
         }, void 0]
     }
-    connect() {
-        return new Promise<WhatsAppServerMsgConn>(
-            (resolve, reject) => {
+	
+	connectionChecker = () => new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
+		this.ws.sendCmd<CmdInitResponse>('admin', 'Conn', 'reref').then(
+			response => { 
+				switch (response.status) {
+					case 429:
+						reject('QRCode timeout')
+						break
+					case 200:
+						const qrContent = [
+							response.ref, this.config.keys.publicKey.toString('base64'), this.config.clientId
+						].join(',')
+						this.wa.emit('qrcode', qrContent);
+						
+						this.timer = setTimeout(this.connectionChecker, response.ttl || 20000)
+						break;
+					case 304:
+						L('Not yet..')
+						this.timer = setTimeout(this.connectionChecker, 3000)
+						break;
+					default:
+						L('QRCode ref Unknown', response)
+						reject('QRCode ref Unknown')
+						break
+				}
+			}
+		).catch(reject)
+	})
+	protected onReady = (info: WhatsAppServerMsgConn, err?: string) => new Promise( (resolve, reject) => {
+		clearTimeout(this.timer);
+		this.onReady = null;
+		(err ? reject(err) : resolve(info))
+	})
+	
+    connect = () => new Promise<WhatsAppServerMsgConn> ((resolve, reject) => {
+		this.ws = new WASocket(this.wa, this.config)
+		
+		const onOpen = () => {
+			// Swap error listener
+			this.wa.removeListener("error", reject)
+			// INIT
+			// INIT
+			this.ws.sendCmd<CmdInitResponse>('admin', 'init',
+				this.version.split('.').map(v => parseInt(v)),
+				[this.clientName, platform(), arch()],
+				this.config.clientId,
+				true
+			).then(response => {
+				if (response.status != 200) {
+					L(response)
+					reject('Init error: ' + response.status)
+					this.close()
+				} else if (!response || !response.ref) {
+					L(response)
+					reject('No server id')
+				} else {
+					 // Has stored session? restore it.
+					 if(this.config.tokens) {
+						 
+						this.ws.sendCmd('admin', 'login', 
+							this.config.tokens.client, this.config.tokens.server,
+							this.config.clientId,
+							'takeover'
+						).then(response => {
+							L('restoreSession:', response);
+							switch (response.status) {
+								case 200:
+									return response//must received Conn, nothing todo here
+								case 401:
+									return reject('Unpaired from the phone')
+								case 403:
+									if (response.tos) {
+										return reject(`Access denied. TOS: ${response.tos} ` +
+											`${response.tos >= 2 ? 'YOU HAVE VIOLATED TOS!' : ''}`)
+									} else {
+										return reject('Access denied')
+									}
+								case 405:
+									return reject('Already logged in')
+								case 409:
+									return reject('Logged in from another location')
+								default:
+									return reject('Unhandled restore response: ' + response.status)
+							}
+						}).catch(err => {
+							E('loginRestore:', err)
+							if (fs.existsSync(this.authFile)) {
+								L('Deleting expired config');
+								fs.unlinkSync(this.authFile)
+							}
+							return this.connectionChecker()
+						}) 
+					 } else {
+						 // Generate qr
+						const qrContent = [
+							response.ref, this.config.keys.publicKey.toString('base64'), this.config.clientId
+						].join(',')
+						this.wa.emit('qrcode', qrContent);
+						
+						this.timer = setTimeout(this.connectionChecker, response.ttl || 20000)
+					 }
+					
+				}
+			}).catch(reject)
+		}
 
-                this.ws = new WASocket(this.wa, this.config)
-                const onOpen = () => {
-                    // Swap error listener
-                    this.wa.removeListener("error", reject)
-                    // INIT
-                    this.ws.sendCmd<CmdInitResponse>('admin', 'init',
-                        this.version.split('.').map(v => parseInt(v)),
-                        [this.clientName, platform(), arch()],
-                        this.config.clientId,
-                        true
-                    ).then(response => {
-                        if (response.status != 200) {
-                            L(response)
-                            reject('Init error: ' + response.status)
-                            this.close()
-                        } else if (!response || !response.ref) {
-                            L(response)
-                            reject('No server id')
-                        } else {
-                            const ttl = response.ttl || 20000
-                            const qrCodeLogin = () => require('./auth/login-qrcode').default.call(this, response.ref, ttl)
-                            // Has stored session? restore it.
-                            return this.config.tokens ?
-                                authRestoreTakeOver.call(this, response.ref, ttl)
-                                    .catch(err => {
-                                        E('loginRestore:', err)
-                                        if (fs.existsSync(this.authFile)) {
-                                            L('Deleting expired config');
-                                            fs.unlinkSync(this.authFile)
-                                        }
-                                        return qrCodeLogin()
-                                    }) :
-                                qrCodeLogin()
-                        }
-                    }).then(resolve).catch(reject)
-                }
-
-                // Fail on early error
-                this.wa.once("error", reject)
-                this.wa.once("open", onOpen)
-                this.wa.on("server-message", this.handleServerMessage.bind(this))
-            }
-        )
-    }
+		// Fail on early error
+		this.wa.once("error", reject)
+		this.wa.once("open", onOpen)
+		this.wa.on("server-message", this.handleServerMessage.bind(this))
+	})
+	
 
     private handleWhatsAppConn(info: WhatsAppServerMsgConn) {
         // Got Conn but no handler, ignore it

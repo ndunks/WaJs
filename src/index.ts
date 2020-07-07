@@ -1,6 +1,7 @@
 import WhatsApp from "./whatsapp";
 import { Color, L } from "./utils";
 import store from "./store";
+import * as qrcode from 'qrcode-terminal'
 
 ///@ts-ignore
 global.L = console.log
@@ -13,6 +14,11 @@ wa.connect().then(
         L('Connected to whatsapp:', Color.y(`${store.name} ${store.device}`));
     }
 ).catch(err => console.error(err))
+
+wa.on('qrcode', (qrContent) => {
+	L('::qrcode please log in');
+	qrcode.generate(qrContent, { small: true })
+});
 
 wa.on('chats-loaded', () => {
     L('::chats-loaded: unread: ', store.getUnreadChats().length)
@@ -59,3 +65,4 @@ wa.on('close', (code, reason) => {
 wa.on('action', (attr, childs) => {
     console.log('::action', childs[0]);
 })
+
