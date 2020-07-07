@@ -15,7 +15,7 @@ wa.connect().then(
     () => {
         console.log(`Whatsapp: ${store.name} ${store.device}`);
         // last offline 
-        wa.presence('unavailable').then(
+        wa.presence('available').then(
             r => console.log('Response', r)
         )
     }

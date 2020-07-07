@@ -1,12 +1,10 @@
 import * as fs from "fs"
 import { readNode } from "@/whatsapp/binary/reader";
 import assert from "assert";
-import "whatsapp_pb"
 import { WANode } from "@/whatsapp/interfaces";
 import BinaryInputStream from "@/whatsapp/binary/input-stream";
 import WhatsApp from "@/whatsapp";
 import store from "@/store";
-import { L } from "@/utils";
 
 export default function () {
     const wa = new WhatsApp()
@@ -30,12 +28,12 @@ export default function () {
         assert.doesNotThrow(() => {
             res = wa.binaryHandle_action(result[1], result[2])
         })
-        L('add', result[1].add, res)
+        console.log('add', result[1].add, res)
         if (result[1].add == 'last') {
             addlastLength = result[2].length
-            L('last len', result[2].length)
+            console.log('last len', result[2].length)
         }
         //break;
     }
-    L('unread', store.getUnreadChats().length)
+    console.log('unread', store.getUnreadChats().length)
 }

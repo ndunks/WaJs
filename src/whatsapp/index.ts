@@ -21,15 +21,15 @@ class WhatsApp extends EventEmitter {
     constructor(authFile = '.auth') {
         super()
         this.client = new Client(authFile, this)
+    }
+
+    connect() {
         const preemptHandle = parsed => this.binaryHandle(parsed)
         this.on('preempt', preemptHandle)
         this.on('chats-loaded', () => {
             this.off('preempt', preemptHandle)
             this.presence('available')
         })
-    }
-
-    connect() {
         return this.client.connect()
     }
 
