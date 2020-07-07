@@ -1,4 +1,6 @@
-import { testHelperLoadWa } from "../helper/wa-helper";
+import { WhatsApp, store } from "whatsapp-web-node";
+import * as qrcode from 'qrcode-terminal'
+
 
 let wid = process.argv.find((v, i, a) => i > 0 && a[i - 1] == '--wid');
 let msg = process.argv.find((v, i, a) => i > 0 && a[i - 1] == '--msg');
@@ -7,13 +9,15 @@ let msg = process.argv.find((v, i, a) => i > 0 && a[i - 1] == '--msg');
 msg = msg || `WaJs Test ${new Date().toLocaleString()}`
 wid = wid || '6285726501017@c.us'
 
-export default function () {
+const wa = new WhatsApp();
+wa.connect().then(
+    () => {
+        console.log(`Whatsapp: ${store.name} ${store.device}`);
+        wa.sendTextMessage(wid, msg);
+    }
+).catch(err => console.error(err))
 
-    return testHelperLoadWa().then(
-        wa => {
-            console.log(`WA READY. Sending ${msg} to ${wid}`);
-            return wa.sendTextMessage(wid, msg)
-        }
-    )
-
-}
+wa.on('qrcode', (qrContent) => {
+    console.log('::qrcode please log in');
+    qrcode.generate(qrContent, { small: true })
+});
