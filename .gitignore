@@ -4,3 +4,4 @@
 /.auth*
 /log
 /build-*
+/src/dev.ts

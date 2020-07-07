@@ -25,7 +25,32 @@ node build-test/test/example.js --filter send-message --wid 6285726501017@c.us -
 
 ## How to Dev
 
-first, you need to install depency with `yarn` or `npm`. then `yarn dev` or `npm run dev`.
+first, you need to install depency with `yarn` or `npm`. Then create file `src/dev.ts` entrypoint.
+
+``` ts
+import * as qrcode from 'qrcode-terminal'
+import WhatsApp from './whatsapp';
+import store from './store';
+
+const wa = new WhatsApp();
+
+wa.connect().then(
+    () => console.log(`Whatsapp OK: ${store.name} ${store.device}`)
+)
+
+wa.on('qrcode', (qrContent) => {
+    qrcode.generate(qrContent, { small: true })
+});
+
+wa.on('chats-loaded', () => {
+    console.log('(!) Unread chats: ', store.getUnreadChats().length)
+})
+
+
+```
+
+Open terminal and run `yarn dev` or `npm run dev`
+
 
     For you that have a time, I hope you send me PR to make it better.
 

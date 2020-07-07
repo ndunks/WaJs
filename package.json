@@ -8,7 +8,7 @@
   "scripts": {
     "dist": "tsc -p tsconfig.dist.json",
     "postdist": "cp etc/whatsapp_pb.js dist/",
-    "dev": "tsc-watch -p tsconfig.dev.json --onSuccess \"node build-dev/index.js\" --onFirstSuccess \"cp etc/whatsapp_pb.js build-dev/\"",
+    "dev": "tsc-watch -p tsconfig.dev.json --onSuccess \"node build-dev/dev.js\" --onFirstSuccess \"cp etc/whatsapp_pb.js build-dev/\"",
     "test": "tsc",
     "posttest": "node build-test/test/test.js",
     "test-watch": "tsc-watch --onSuccess \"node build-test/test/test.js\"",
