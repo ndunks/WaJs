@@ -13,9 +13,13 @@ const wa = new WhatsApp();
 wa.connect().then(
     () => {
         console.log(`Whatsapp: ${store.name} ${store.device}`);
-        wa.sendTextMessage(wid, msg);
     }
 ).catch(err => console.error(err))
+
+wa.on('chats-loaded', () => {
+    console.log('::chats-loaded: unread: ', store.getUnreadChats().length)
+    wa.sendTextMessage(wid, msg);
+})
 
 wa.on('qrcode', (qrContent) => {
     console.log('::qrcode please log in');
