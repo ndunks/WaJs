@@ -1,7 +1,7 @@
 {
-  "name": "whatsapp-ws",
+  "name": "whatsapp-web-node",
   "version": "0.0.1",
-  "description": "WhatsApp Web WS",
+  "description": "WhatsApp Web for NodeJS",
   "main": "dist/index.js",
   "author": "Mochamad Arifin",
   "license": "MIT",

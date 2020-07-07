@@ -9,6 +9,9 @@
       ],
       "whatsapp_pb": [
         "src/whatsapp_pb"
+      ],
+      "whatsapp-web-node": [
+        "src/index.ts"
       ]
     },
     "outDir": "build-test"
