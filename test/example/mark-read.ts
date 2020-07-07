@@ -1,4 +1,4 @@
-import { testHelperLoadWa } from "./helper";
+import { testHelperLoadWa } from "../helper/wa-helper";
 import store from "@/store";
 import { Color, L } from "@/utils";
 import { widHelper } from "@/whatsapp/helper";

@@ -1,4 +1,4 @@
-import { testHelperLoadWa, testHelperSequential } from "./helper";
+import { testHelperLoadWa, testHelperSequential } from "../helper/wa-helper";
 
 
 export default function () {

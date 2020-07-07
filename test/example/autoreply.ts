@@ -1,4 +1,4 @@
-import { testHelperLoadWa, testHelperSequential } from "./helper";
+import { testHelperLoadWa } from "../helper/wa-helper";
 import store from "@/store";
 
 
