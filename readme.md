@@ -20,7 +20,7 @@ This project is **not for normal-user**. at least you must know JavaScript/TypeS
 Look at [sendmessage.ts]() example, or run it:
 ```
 tsc
-node build-test/test/example.js --filter sendmessage --wid 628XXXXXXXXX@c.us --msg "Hello from NodeJS Whatsapp"
+node build-test/test/example.js --filter sendmessage --wid 6285726501017@c.us --msg "Hello from NodeJS Whatsapp"
 ```
 
 ## How to Dev
