@@ -262,7 +262,10 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     //on(event: 'message', listener: (tag: string, data: Buffer | string) => void): this;
     /** Got server message, 's' prefixed eg s1, s2, s3 */
     on(event: 'server-message', listener: (cmd: WhatsAppServerMsg, data: Array<any> | Object) => void): this;
-    /** After login and received initial chats data from server */
+    /** After login and received initial chats data from server. 
+     * 
+     * TODO: Sometime this event is not called (maybe when account has no chats)
+    */
     on(event: 'chats-loaded', listener: () => void): this;
     /** '!' prefixed */
     on(event: 'timeskew', listener: (ts: number, message: null | string | Buffer) => void): this;
@@ -272,7 +275,7 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     on(event: 'Blocklist', listener: (data: any) => void): this;
     on(event: 'Presence', listener: (data: DataPresence) => void): this;
     on(event: 'Msg', listener: (data: DataMsgTypes) => void): this;
-	on(event: 'qrcode', listener: (data: string) => void): this;
+    on(event: 'qrcode', listener: (data: string) => void): this;
 
 }
 
