@@ -37,9 +37,9 @@ export default class Client {
     timeSkew: number
     epochCount = 0
     epoch = 0
-	timer = null
+    timer = null
 
-    
+
     /** Internal command handler */
     private serverCmdHandlers = {
         disconnect: (args) => {
@@ -123,122 +123,120 @@ export default class Client {
             epoch: this.epochSend()
         }, void 0]
     }
-	
-	connectionChecker = () => new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
-		this.ws.sendCmd<CmdInitResponse>('admin', 'Conn', 'reref').then(
-			response => { 
-				switch (response.status) {
-					case 429:
-						reject('QRCode timeout')
-						break
-					case 200:
-						const qrContent = [
-							response.ref, this.config.keys.publicKey.toString('base64'), this.config.clientId
-						].join(',')
-						this.wa.emit('qrcode', qrContent);
-						
-						this.timer = setTimeout(this.connectionChecker, response.ttl || 20000)
-						break;
-					case 304:
-						L('Not yet..')
-						this.timer = setTimeout(this.connectionChecker, 3000)
-						break;
-					default:
-						L('QRCode ref Unknown', response)
-						reject('QRCode ref Unknown')
-						break
-				}
-			}
-		).catch(reject)
-	})
-	protected onReady = (info: WhatsAppServerMsgConn, err?: string) => new Promise( (resolve, reject) => {
-		clearTimeout(this.timer);
-		this.onReady = null;
-		(err ? reject(err) : resolve(info))
-	})
-	
-    connect = () => new Promise<WhatsAppServerMsgConn> ((resolve, reject) => {
-		this.ws = new WASocket(this.wa, this.config)
-		
-		const onOpen = () => {
-			// Swap error listener
-			this.wa.removeListener("error", reject)
-			// INIT
-			// INIT
-			this.ws.sendCmd<CmdInitResponse>('admin', 'init',
-				this.version.split('.').map(v => parseInt(v)),
-				[this.clientName, platform(), arch()],
-				this.config.clientId,
-				true
-			).then(response => {
-				if (response.status != 200) {
-					L(response)
-					reject('Init error: ' + response.status)
-					this.close()
-				} else if (!response || !response.ref) {
-					L(response)
-					reject('No server id')
-				} else {
-					 // Has stored session? restore it.
-					 if(this.config.tokens) {
-						 
-						this.ws.sendCmd('admin', 'login', 
-							this.config.tokens.client, this.config.tokens.server,
-							this.config.clientId,
-							'takeover'
-						).then(response => {
-							L('restoreSession:', response);
-							switch (response.status) {
-								case 200:
-									return response//must received Conn, nothing todo here
-								case 401:
-									return reject('Unpaired from the phone')
-								case 403:
-									if (response.tos) {
-										return reject(`Access denied. TOS: ${response.tos} ` +
-											`${response.tos >= 2 ? 'YOU HAVE VIOLATED TOS!' : ''}`)
-									} else {
-										return reject('Access denied')
-									}
-								case 405:
-									return reject('Already logged in')
-								case 409:
-									return reject('Logged in from another location')
-								default:
-									return reject('Unhandled restore response: ' + response.status)
-							}
-						}).catch(err => {
-							E('loginRestore:', err)
-							if (fs.existsSync(this.authFile)) {
-								L('Deleting expired config');
-								fs.unlinkSync(this.authFile)
-							}
-							return this.connectionChecker()
-						}) 
-					 } else {
-						 // Generate qr
-						const qrContent = [
-							response.ref, this.config.keys.publicKey.toString('base64'), this.config.clientId
-						].join(',')
-						this.wa.emit('qrcode', qrContent);
-						
-						this.timer = setTimeout(this.connectionChecker, response.ttl || 20000)
-					 }
-					
-				}
-			}).catch(reject)
-		}
 
-		// Fail on early error
-		this.wa.once("error", reject)
-		this.wa.once("open", onOpen)
-		this.wa.on("server-message", this.handleServerMessage.bind(this))
-	})
-	
+    connectionChecker = () => new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
+        this.ws.sendCmd<CmdInitResponse>('admin', 'Conn', 'reref').then(
+            response => {
+                switch (response.status) {
+                    case 429:
+                        reject('QRCode timeout')
+                        break
+                    case 200:
+                        const qrContent = [
+                            response.ref, this.config.keys.publicKey.toString('base64'), this.config.clientId
+                        ].join(',')
+                        this.wa.emit('qrcode', qrContent);
+
+                        this.timer = setTimeout(this.connectionChecker, response.ttl || 20000)
+                        break;
+                    case 304:
+                        L('Not yet..')
+                        this.timer = setTimeout(this.connectionChecker, 3000)
+                        break;
+                    default:
+                        L('QRCode ref Unknown', response)
+                        reject('QRCode ref Unknown')
+                        break
+                }
+            }
+        ).catch(reject)
+    })
+    protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void;
+
+    connect = () => new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
+        this.ws = new WASocket(this.wa, this.config)
+
+        this.onReady = (info, err) => err ? reject(err) : resolve(info)
+
+        const onOpen = () => {
+            // Swap error listener
+            this.wa.removeListener("error", reject)
+
+            // INIT
+            this.ws.sendCmd<CmdInitResponse>('admin', 'init',
+                this.version.split('.').map(v => parseInt(v)),
+                [this.clientName, platform(), arch()],
+                this.config.clientId,
+                true
+            ).then(response => {
+                if (response.status != 200) {
+                    L(response)
+                    reject('Init error: ' + response.status)
+                    this.close()
+                } else if (!response || !response.ref) {
+                    L(response)
+                    reject('No server id')
+                } else {
+                    // Has stored session? restore it.
+                    if (this.config.tokens) {
+
+                        this.ws.sendCmd('admin', 'login',
+                            this.config.tokens.client, this.config.tokens.server,
+                            this.config.clientId,
+                            'takeover'
+                        ).then(response => {
+                            L('restoreSession:', response);
+                            switch (response.status) {
+                                case 200:
+                                    return response//must received Conn, nothing todo here
+                                case 401:
+                                    return reject('Unpaired from the phone')
+                                case 403:
+                                    if (response.tos) {
+                                        return reject(`Access denied. TOS: ${response.tos} ` +
+                                            `${response.tos >= 2 ? 'YOU HAVE VIOLATED TOS!' : ''}`)
+                                    } else {
+                                        return reject('Access denied')
+                                    }
+                                case 405:
+                                    return reject('Already logged in')
+                                case 409:
+                                    return reject('Logged in from another location')
+                                default:
+                                    return reject('Unhandled restore response: ' + response.status)
+                            }
+                        }).catch(err => {
+                            E('loginRestore:', err)
+                            if (fs.existsSync(this.authFile)) {
+                                L('Deleting expired config');
+                                fs.unlinkSync(this.authFile)
+                            }
+                            return this.connectionChecker()
+                        })
+                    } else {
+                        // Generate qr
+                        const qrContent = [
+                            response.ref, this.config.keys.publicKey.toString('base64'), this.config.clientId
+                        ].join(',')
+                        this.wa.emit('qrcode', qrContent);
+
+                        this.timer = setTimeout(this.connectionChecker, response.ttl || 20000)
+                    }
+
+                }
+            }).catch(reject)
+        }
+
+        // Fail on early error
+        this.wa.once("error", reject)
+        this.wa.once("open", onOpen)
+        this.wa.on("server-message", this.handleServerMessage.bind(this))
+    })
+
 
     private handleWhatsAppConn(info: WhatsAppServerMsgConn) {
-        // Got Conn but no handler, ignore it
         if (!this.onReady) {
+            L(Color.y("Got Conn but no handler, ignore it"))
             store.storeConn(info)
             return
         }
@@ -262,8 +260,10 @@ export default class Client {
         // Save creds
         configStore(this.authFile, this.config)
         store.storeConn(info)
+
         // call on ready
         this.onReady(info)
+        L(Color.y("**** Ready ****"))
     }
 
     /** Just call it to make looks like normal web whatsapp behaviour */

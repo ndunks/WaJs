@@ -15,6 +15,14 @@ This project is **not for normal-user**. at least you must know JavaScript/TypeS
 
     **NOTE:** All unread message on your inbox will be auto replied too :-)
 
+**Send Message Example**
+
+Look at [sendmessage.ts]() example, or run it:
+```
+tsc
+node build-test/test/example.js --filter sendmessage --wid 628XXXXXXXXX@c.us --msg "Hello from NodeJS Whatsapp"
+```
+
 ## How to Dev
 
 first, you need to install depency with `yarn` or `npm`. then `yarn dev` or `npm run dev`.

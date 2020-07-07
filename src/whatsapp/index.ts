@@ -207,11 +207,12 @@ class WhatsApp extends EventEmitter {
 
                 break
             default:
-                L('Handle action not known:', attr.add)
+                L(Color.r('Handle action not known:'), attr)
                 break
         }
         if (!this.chatsLoaded && attr.last == 'true') {
             this.chatsLoaded = true
+            L(Color.y('*** chats-loaded ***'))
             this.emit('chats-loaded')
         }
     }
