@@ -156,7 +156,68 @@ export default class Client {
     connect = () => new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
         this.ws = new WASocket(this.wa, this.config)
 
-        this.onReady = (info, err) => err ? reject(err) : resolve(info)
+        this.onReady = (info, err) => {
+            if (this.timer) clearTimeout(this.timer);
+            err ? reject(err) : resolve(info);
+        }
+
+        const initHandler = (response: CmdInitResponse) => {
+            if (response.status != 200) {
+                L(response)
+                reject('Init error: ' + response.status)
+                this.close()
+            } else if (!response || !response.ref) {
+                L(response)
+                reject('No server id')
+            } else {
+                // Has stored session? restore it.
+                if (this.config.tokens) {
+                    this.ws.sendCmd('admin', 'login',
+                        this.config.tokens.client, this.config.tokens.server,
+                        this.config.clientId,
+                        'takeover'
+                    ).then(login_response => {
+                        L('restoreSession:', login_response);
+                        switch (login_response.status) {
+                            case 200:
+                                return login_response//must received Conn, nothing todo here
+                            case 401:
+                                return Promise.reject('Unpaired from the phone')
+                            case 403:
+                                if (login_response.tos) {
+                                    return reject(`Access denied. TOS: ${login_response.tos} ` +
+                                        `${login_response.tos >= 2 ? 'YOU HAVE VIOLATED TOS!' : ''}`)
+                                } else {
+                                    return reject('Access denied')
+                                }
+                            case 405:
+                                return reject('Already logged in')
+                            case 409:
+                                return reject('Logged in from another location')
+                            default:
+                                return Promise.reject('Unhandled restore response: ' + login_response.status)
+                        }
+                    }).catch(err => {
+                        E('loginRestore:', err)
+                        delete this.config.tokens;
+                        this.ws.sendCmd<CmdInitResponse>('admin', 'init',
+                            this.version.split('.').map(v => parseInt(v)),
+                            [this.clientName, platform(), arch()],
+                            this.config.clientId,
+                            true
+                        ).then(initHandler).catch(reject)
+                    })
+                } else {
+                    // Generate qr
+                    const qrContent = [
+                        response.ref, this.config.keys.publicKey.toString('base64'), this.config.clientId
+                    ].join(',')
+                    this.wa.emit('qrcode', qrContent);
+                    this.timer = setTimeout(this.connectionChecker, response.ttl || 20000)
+                }
+
+            }
+        }
 
         const onOpen = () => {
             // Swap error listener
@@ -168,63 +229,7 @@ export default class Client {
                 [this.clientName, platform(), arch()],
                 this.config.clientId,
                 true
-            ).then(response => {
-                if (response.status != 200) {
-                    L(response)
-                    reject('Init error: ' + response.status)
-                    this.close()
-                } else if (!response || !response.ref) {
-                    L(response)
-                    reject('No server id')
-                } else {
-                    // Has stored session? restore it.
-                    if (this.config.tokens) {
-
-                        this.ws.sendCmd('admin', 'login',
-                            this.config.tokens.client, this.config.tokens.server,
-                            this.config.clientId,
-                            'takeover'
-                        ).then(response => {
-                            L('restoreSession:', response);
-                            switch (response.status) {
-                                case 200:
-                                    return response//must received Conn, nothing todo here
-                                case 401:
-                                    return reject('Unpaired from the phone')
-                                case 403:
-                                    if (response.tos) {
-                                        return reject(`Access denied. TOS: ${response.tos} ` +
-                                            `${response.tos >= 2 ? 'YOU HAVE VIOLATED TOS!' : ''}`)
-                                    } else {
-                                        return reject('Access denied')
-                                    }
-                                case 405:
-                                    return reject('Already logged in')
-                                case 409:
-                                    return reject('Logged in from another location')
-                                default:
-                                    return reject('Unhandled restore response: ' + response.status)
-                            }
-                        }).catch(err => {
-                            E('loginRestore:', err)
-                            if (fs.existsSync(this.authFile)) {
-                                L('Deleting expired config');
-                                fs.unlinkSync(this.authFile)
-                            }
-                            return this.connectionChecker()
-                        })
-                    } else {
-                        // Generate qr
-                        const qrContent = [
-                            response.ref, this.config.keys.publicKey.toString('base64'), this.config.clientId
-                        ].join(',')
-                        this.wa.emit('qrcode', qrContent);
-
-                        this.timer = setTimeout(this.connectionChecker, response.ttl || 20000)
-                    }
-
-                }
-            }).catch(reject)
+            ).then(initHandler).catch(reject)
         }
 
         // Fail on early error
