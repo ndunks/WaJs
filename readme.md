@@ -31,21 +31,24 @@ first, you need to install depency with `yarn` or `npm`. Then create file `src/d
 import * as qrcode from 'qrcode-terminal'
 import WhatsApp from './whatsapp';
 import store from './store';
+import {existsSync, readFileSync, writeFileSync } from "fs";
 
-const wa = new WhatsApp();
+let authFile = 'session.json'
+let conf = existsSync(authFile) ? JSON.parse(readFileSync(authFile, 'utf8')) : null;
 
-wa.connect().then(
-    () => console.log(`Whatsapp OK: ${store.name} ${store.device}`)
-)
+const wa = new WhatsApp(conf);
+
+wa.connect().then((cfg) => {
+    writeFileSync('session.json', JSON.stringify(cfg, null, 2) )
+})
 
 wa.on('qrcode', (qrContent) => {
     qrcode.generate(qrContent, { small: true })
 });
-
+ 
 wa.on('chats-loaded', () => {
     console.log('(!) Unread chats: ', store.getUnreadChats().length)
 })
-
 
 ```
 
