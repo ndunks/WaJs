@@ -1,11 +1,11 @@
 import assert from "assert";
 import crypto from "crypto";
-import { BinNode } from "@/whatsapp/interfaces";
+import { readFileSync } from "fs";
+import { BinNode, WhatsAppClientConfig } from "@/whatsapp/interfaces";
 import { writeNode } from "@/whatsapp/binary/writer";
 import BinaryOutputStream from "@/whatsapp/binary/output-stream";
 import { readNode } from "@/whatsapp/binary/reader";
 import BinaryInputStream from "@/whatsapp/binary/input-stream";
-import { configLoad } from "@/utils";
 import { AESEncrypt, AESDecrypt, hmacDecrypt } from "@/whatsapp/secure";
 export default function () {
     let node1: BinNode = [
@@ -25,8 +25,17 @@ export default function () {
     let bis = new BinaryInputStream(buf)
     let node2 = readNode(bis)
     assert.deepEqual(node1, node2)
-    const authFile = '.auth';
-    const cfg = configLoad(authFile)
+    const authFile = 'session.json';
+
+    const obj = JSON.parse(readFileSync(authFile, 'utf8'))
+    const cfg: WhatsAppClientConfig = Object.assign({}, obj)
+    cfg.serverSecret = Buffer.from(obj.serverSecret, 'base64')
+    cfg.aesKey = Buffer.from(obj.aesKey, 'base64')
+    cfg.macKey = Buffer.from(obj.macKey, 'base64')
+    Object.keys(obj.keys).forEach(
+        k => cfg.keys[k] = Buffer.from(obj.keys[k], 'base64')
+    )
+ 
 
     function correction(node: BinNode, correctBin: number[], hint: string, encryptedLength) {
         let bos = new BinaryOutputStream()

@@ -2,6 +2,7 @@
 /dist
 /tmp
 /.auth*
+/session.json
 /log
 /build-*
 /src/dev.ts
