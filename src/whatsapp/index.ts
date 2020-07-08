@@ -18,9 +18,9 @@ class WhatsApp extends EventEmitter {
     private chatsLoaded = false
     unreadInboxMessage: WebMessageInfo.AsObject[] = []
 
-    constructor(authFile = '.auth') {
+    constructor(config = null) {
         super()
-        this.client = new Client(authFile, this)
+        this.client = new Client(config, this)
     }
 
     connect() {

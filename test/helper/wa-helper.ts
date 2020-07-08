@@ -14,9 +14,8 @@ export function testHelperLoadWa(): Promise<WhatsApp> {
         wa.connect().then(
             info => {
                 console.log(Color.g('Test whatsapp:'),
-                    info.pushname,
-                    info.phone.device_manufacturer,
-                    info.phone.device_model
+                    info.clientId,
+                    info.serverSecret
                 );
                 //res(wa_instance = wa);
             }

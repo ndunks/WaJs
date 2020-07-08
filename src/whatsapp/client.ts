@@ -5,7 +5,7 @@ import {
     WhatsAppServerMsgConn, WhatsAppServerMsgCmd, WhatsAppServerMsgCmdChallenge, WhatsAppClientConfig, BinNode, BinNodeTags, BinAttr
 } from "./interfaces";
 import * as fs from 'fs'
-import { configLoad, configStore, Color, L, E } from "../utils";
+import { Color, L, E } from "../utils";
 import { generateKeyPair, decryptEncryptionKeys } from "./secure";
 import WASocket from "./wa-socket";
 import WhatsApp from ".";
@@ -63,16 +63,27 @@ export default class Client {
         }
     }
 
-    constructor(private authFile = '.auth', private wa: WhatsApp) {
-        if (fs.existsSync(authFile)) {
-            this.config = configLoad(this.authFile)
-        } else {
-            // default config
+    constructor(private obj = null, private wa: WhatsApp) {
+        // default config
+        if(obj) {
+
+            const cfg: WhatsAppClientConfig = Object.assign({}, obj)
+            cfg.serverSecret = Buffer.from(obj.serverSecret, 'base64')
+            cfg.aesKey = Buffer.from(obj.aesKey, 'base64')
+            cfg.macKey = Buffer.from(obj.macKey, 'base64')
+    
+            Object.keys(obj.keys).forEach(
+                k => cfg.keys[k] = Buffer.from(obj.keys[k], 'base64')
+            )
+            this.config = cfg;
+        }
+        else {
             this.config = {
                 clientId: randomBytes(16).toString('base64'),
                 keys: generateKeyPair()
             }
-        }
+        }        
+        
     }
 
     epochSend(noIncrementEpoch?: boolean) {
@@ -151,9 +162,9 @@ export default class Client {
             }
         ).catch(reject)
     })
-    protected onReady: (info: WhatsAppServerMsgConn, err?: string) => void;
+    protected onReady: (info: WhatsAppClientConfig, err?: string) => void;
 
-    connect = () => new Promise<WhatsAppServerMsgConn>((resolve, reject) => {
+    connect = () => new Promise<WhatsAppClientConfig>((resolve, reject) => {
         this.ws = new WASocket(this.wa, this.config)
 
         this.onReady = (info, err) => {
@@ -263,11 +274,17 @@ export default class Client {
         }
 
         // Save creds
-        configStore(this.authFile, this.config)
         store.storeConn(info)
 
+        const obj: any = Object.assign({}, this.config)
+        obj.serverSecret = this.config.serverSecret.toString('base64')
+        obj.aesKey = this.config.aesKey.toString('base64')
+        obj.macKey = this.config.macKey.toString('base64')
+        Object.keys(this.config.keys).forEach(
+            k => obj.keys[k] = this.config.keys[k].toString('base64')
+        )
         // call on ready
-        this.onReady(info)
+        this.onReady(obj)
         L(Color.y("**** Ready ****"))
     }
 
