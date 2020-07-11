@@ -1,22 +1,34 @@
 import Constant from "./constant";
-import { WidObj, METRIC, EphemeralFlag } from "./interfaces";
+import { WidObj, METRIC, EphemeralFlag, MediaKeyInfo } from "./interfaces";
 import { randomBytes } from "crypto";
 import { L } from "../utils";
 const widRegex = /(?:^([^.:@]+))(?:\.([0-9]{1,2}))?(?:\:([0-9]{1,2}))?@(s\.whatsapp\.net|c\.us|g\.us|broadcast|call|b\.whatsapp\.net)$/i;
 const widCanBe = ["name", "short", "notify"];
 
-export function createMessageId() {
-    let byteMap = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70]
-    let randBytes = randomBytes(8)
+export function getMediaKeyInfo(type:string = "image"){
+	return MediaKeyInfo[type.toUpperCase()] ? MediaKeyInfo[type.toUpperCase()]:null;
+}
 
-    let result = new Array(16), randByte, randIdx = 0
+export function createMessageId(msgType = "default") {
+    let byteMap = [48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 65, 66, 67, 68, 69, 70]
+	let rand_b = {
+		image: 16,
+		default: 10
+	}
+    let randBytes = randomBytes(rand_b[msgType] ? rand_b[msgType]:10)
+	let res_len = {
+		image: 32,
+		default: 20
+	}
+
+    let result = new Array(res_len[msgType] ? res_len[msgType]:20), randByte, randIdx = 0
 
     for (let idx = 0; randIdx < randBytes.length; randIdx++, idx += 2) {
         randByte = randBytes[randIdx];
         result[idx] = byteMap[randByte >> 4]
         result[idx + 1] = byteMap[15 & randByte]
     }
-    return "3EB0" + String.fromCharCode.apply(String, result)
+    return String.fromCharCode.apply(String, result)
 }
 
 export function binaryOptions(metric: METRIC, flagObj: EphemeralFlag = { ignore: true }) {
