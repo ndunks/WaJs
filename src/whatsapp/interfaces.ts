@@ -7,6 +7,25 @@ export interface WidObj {
     device?: number
 }
 
+export interface EncryptMediaResult {
+	fileSha256: Buffer | string,
+	fileEncSha256: Buffer | string,
+	mac: Buffer | string,
+	cipherMedia: Buffer | string
+}
+
+export enum MediaKeyInfo {
+	AUDIO= "WhatsApp Audio Keys",
+	DOCUMENT= "WhatsApp Document Keys",
+	GIF= "WhatsApp Video Keys",
+	IMAGE= "WhatsApp Image Keys",
+	PRODUCT= "WhatsApp Image Keys",
+	PTT= "WhatsApp Audio Keys",
+	STICKER= "WhatsApp Image Keys",
+	VIDEO= "WhatsApp Video Keys",
+	HISTORY_SYNC= "WhatsApp History Keys"
+}
+
 export interface WhatsAppClientConfig {
     /** 16 Byte ID Auto Generated */
     clientId: string
