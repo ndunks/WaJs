@@ -1,5 +1,78 @@
 import * as crypto from "crypto";
 import * as curve from "curve25519-n";
+import hkdf from 'futoin-hkdf';
+import { getMediaKeyInfo } from './helper';
+import { EncryptMediaResult } from './interfaces';
+
+export function decryptE2EMedia(mediaKey: Buffer | string, encrypted: Buffer | string, type: string): Buffer{
+	type = getMediaKeyInfo(type);
+	if (!type) {
+        throw "MediaKeyInfo cannot be blank or null"
+    }
+	
+	if (typeof mediaKey == 'string'){
+		mediaKey = new Buffer(mediaKey, 'base64')
+	}
+	
+	if (typeof encrypted == 'string'){
+		encrypted = new Buffer(encrypted, 'base64')
+	}
+	
+	var enc_len = encrypted.length,
+		file = encrypted.slice(0,-10),
+		macFile = encrypted.slice(-10,enc_len),
+		hkdf_res = hkdf(mediaKey, 112, {info: type}),
+		iv = hkdf_res.slice(0, 16),
+		cipherKey = hkdf_res.slice(16, 48),
+		macKey = hkdf_res.slice(48, 80);
+	
+	var validator = crypto.createHmac("sha256", macKey).update(Buffer.concat([iv, file])).digest(),
+		macSign = validator.slice(0, 10);
+		
+	if(macSign.toString("base64") != macFile.toString("base64")){
+		throw "Signature not match, decryption aborted"
+	}
+	
+	var decipher = crypto.createDecipheriv('aes-256-cbc', cipherKey, iv),
+		decrypted = decipher.update(file);
+
+	return decrypted
+}
+
+export function encryptE2EMedia(mediaKey: Buffer | string, plain: Buffer | string, type: string): EncryptMediaResult{
+	type = getMediaKeyInfo(type);
+	if (!type) {
+        throw "MediaKeyInfo cannot be blank or null"
+    }
+	
+	if (typeof mediaKey == 'string'){
+		mediaKey = new Buffer(mediaKey, 'base64')
+	}
+	
+	if (typeof plain == 'string'){
+		plain = new Buffer(plain, 'base64')
+	}
+	
+	var hkdf_res = hkdf(mediaKey, 112, {info: type}),
+		iv = hkdf_res.slice(0, 16),
+		cipherKey = hkdf_res.slice(16, 48),
+		macKey = hkdf_res.slice(48, 80),
+		cipher = crypto.createCipheriv('aes-256-cbc', cipherKey, iv),
+		enc = Buffer.concat([cipher.update(plain), cipher.final()]);
+		
+	var signature = crypto.createHmac("sha256", macKey).update(Buffer.concat([iv, enc])).digest(),
+		mac = signature.slice(0, 10);
+		
+	var fileSha256 = crypto.createHash('sha256').update(plain).digest(),
+		fileEncSha256 = crypto.createHash('sha256').update(Buffer.concat([enc, mac])).digest();
+		
+	return {
+		fileSha256,
+		fileEncSha256,
+		mac,
+		cipherMedia: enc
+	}
+}
 
 export function generateKeyPair() {
     const secretKey = crypto.randomBytes(32)
