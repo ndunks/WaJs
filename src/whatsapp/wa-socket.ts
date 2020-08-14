@@ -73,7 +73,12 @@ export class WASocket {
                 } else {
                     logs.push(Color.r('(!) Cannot parse'))
                 }
-            } else logs.push(Color.b('NULL'))
+            } else {
+                logs.push(Color.b('NULL'))
+                logs.push(Color.y("Ignored"));
+                L(...logs);
+                return;
+            }
 
             if (commandTagHandlers.has(id)) {
                 logs.push(Color.g('[handled]'))
@@ -220,6 +225,7 @@ export class WASocket {
             `${scope},${cmd}`
         )
     }
+
     sendBin<T = any>(cmd: string, attr: any, data?: any, hint?: string) {
         const msg = [cmd, attr, data]
         return this.send<T>(
@@ -228,6 +234,7 @@ export class WASocket {
             this.shortTag()
         )
     }
+
     sendNode(node: BinNode, tag?: string, binaryOptions?: Uint8Array) {
         const bos = new BinaryOutputStream()
         writeNode(bos, node)
