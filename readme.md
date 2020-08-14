@@ -18,9 +18,15 @@ This project is **not for normal-user**. at least you must know JavaScript/TypeS
 **Send Message Example**
 
 Look at [send-message.ts](test/example/send-message.ts) example, or run it:
-```
+``` bash
 tsc
 node build-test/test/example.js --filter send-message --wid 6285726501017@c.us --msg "Hello from NodeJS Whatsapp"
+```
+
+**Check A Number is Using WhatsApp or not**
+``` bash
+tsc
+node build-test/test/example.js --filter checker --wid 6285726501017@c.us
 ```
 
 ## How to Dev
@@ -39,7 +45,9 @@ let conf = existsSync(authFile) ? JSON.parse(readFileSync(authFile, 'utf8')) : n
 const wa = new WhatsApp(conf);
 
 wa.connect().then((cfg) => {
-    writeFileSync('session.json', JSON.stringify(cfg, null, 2) )
+    // Note:
+    // Always update the config file. The tokens changed every connection.
+    writeFileSync(authFile, JSON.stringify(cfg, null, 2) )
 })
 
 wa.on('qrcode', (qrContent) => {

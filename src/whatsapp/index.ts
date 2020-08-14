@@ -1,10 +1,9 @@
 import Client from "./client";
 import { EventEmitter } from "events";
 import {
-    WhatsAppServerMsg, DataMsgTypes, DataPresence, PreemptMessage,
+    WhatsAppServerMsg, DataMsgTypes, PreemptMessage,
     BinAttrChat, BinAttrUser, BinAttrResponse, BinNode, Chat,
-    METRIC,
-    BinAttr
+    METRIC, BinAttr, WhatsAppServerMsgCmdPresence
 } from "./interfaces";
 import { Color, L } from "../utils";
 import "../whatsapp_pb"
@@ -60,11 +59,26 @@ class WhatsApp extends EventEmitter {
         return this.query({ type: 'status' })
     }
 
+    queryProfilePicThumb(jid: string) {
+        return this.client.ws.send(`,["query","ProfilePicThumb","${jid}"]`, "ProfilePicThumb")
+            .then(r => r.eurl);
+    }
+
+    queryExist(jid: string) {
+        return this.client.ws.sendCmd("query", "exist", jid)
+            .then(r => r.status == "200");
+    }
+
     presence(type: 'available' | 'unavailable') {
         const node = this.client.actionNode('set', [
             ['presence', { type }, undefined]
         ])
         return this.client.ws.sendNode(node, undefined, binaryOptions(METRIC.PRESENCE))
+    }
+
+    presenceSubscribe(wid: string) {
+        let tag = this.client.ws.shortTag();
+        return this.client.ws.sock.send(`${tag},,["action","presence","subscribe","${wid}"]`);
     }
 
     sendTextMessage(jid: string, message) {
@@ -274,7 +288,7 @@ declare interface WhatsApp extends NodeJS.EventEmitter {
     on(event: 'Stream', listener: (data: any) => void): this;
     on(event: 'Props', listener: (data: any) => void): this;
     on(event: 'Blocklist', listener: (data: any) => void): this;
-    on(event: 'Presence', listener: (data: DataPresence) => void): this;
+    on(event: 'Presence', listener: (data: WhatsAppServerMsgCmdPresence) => void): this;
     on(event: 'Msg', listener: (data: DataMsgTypes) => void): this;
     on(event: 'qrcode', listener: (data: string) => void): this;
 
