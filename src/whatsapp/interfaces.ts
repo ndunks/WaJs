@@ -8,22 +8,22 @@ export interface WidObj {
 }
 
 export interface EncryptMediaResult {
-	fileSha256: Buffer | string,
-	fileEncSha256: Buffer | string,
-	mac: Buffer | string,
-	cipherMedia: Buffer | string
+    fileSha256: Buffer | string,
+    fileEncSha256: Buffer | string,
+    mac: Buffer | string,
+    cipherMedia: Buffer | string
 }
 
 export enum MediaKeyInfo {
-	AUDIO= "WhatsApp Audio Keys",
-	DOCUMENT= "WhatsApp Document Keys",
-	GIF= "WhatsApp Video Keys",
-	IMAGE= "WhatsApp Image Keys",
-	PRODUCT= "WhatsApp Image Keys",
-	PTT= "WhatsApp Audio Keys",
-	STICKER= "WhatsApp Image Keys",
-	VIDEO= "WhatsApp Video Keys",
-	HISTORY_SYNC= "WhatsApp History Keys"
+    AUDIO = "WhatsApp Audio Keys",
+    DOCUMENT = "WhatsApp Document Keys",
+    GIF = "WhatsApp Video Keys",
+    IMAGE = "WhatsApp Image Keys",
+    PRODUCT = "WhatsApp Image Keys",
+    PTT = "WhatsApp Audio Keys",
+    STICKER = "WhatsApp Image Keys",
+    VIDEO = "WhatsApp Video Keys",
+    HISTORY_SYNC = "WhatsApp History Keys"
 }
 
 export interface WhatsAppClientConfig {
@@ -83,6 +83,13 @@ export interface WhatsAppServerMsgCmdChallenge extends WhatsAppServerMsgCmd {
     type: 'challenge'
     /** Base64 challenge */
     challenge: string
+}
+
+export interface WhatsAppServerMsgCmdPresence extends WhatsAppServerMsgCmd {
+    type: 'unavailable' | 'available' | 'composing'
+    id: string // WID/JID
+    t: number //Unix-time 1597328601
+    deny: boolean
 }
 
 export interface WhatsAppServerMsgConn {
@@ -167,14 +174,7 @@ export interface DataMsgsMulti extends DataMsg {
     id: string[]
 }
 export type DataMsgTypes = DataMsgSingle | DataMsgsMulti
-export interface DataPresence {
-    /** WA ID/Phone Number */
-    id: string // 6285747168008@c.us
-    type: 'unavailable' | 'available' | 'composing'
-    /** Unix TS */
-    t: number
-    deny: boolean
-}
+
 
 export interface BinAttr {
     add?: string
