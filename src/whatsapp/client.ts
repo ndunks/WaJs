@@ -16,7 +16,7 @@ export default class Client {
     clientName = 'WaJs'
 
     /** Compactible Web WhatsApp Version */
-    version = '2.2019.6'
+    version = '2.2121.6'
 
     /** Proto version when this created */
     protoVersion = [0, 17]
