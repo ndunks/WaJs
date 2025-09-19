@@ -4,6 +4,12 @@ NodeJS implementation from great research [sigalor/whatsapp-web-reveng](https://
 
 This project is **not for normal-user**. at least you must know JavaScript/TypeScript dialect :-).
 
+## Other Project ( New!! )
+
+You can check this browser-based Whatsapp Remote that ready to use, and customizable using js:
+
+# [WhatsApp Remote by NodePlus](https://github.com/n0d3-plus/whatsapp-remote)
+
 ## Quick Start
 
 - Install depency `yarn` / `npm`
